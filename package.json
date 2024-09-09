@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@sqlitecloud/drivers": "^1.0.245",
+    "express": "^4.19.2"
+  }
+}
