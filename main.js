@@ -1,75 +1,90 @@
 const { Database } = require('@sqlitecloud/drivers');
-const express = require('express');
+const express = require('express'); 
 const app = express();
-const fs = require('fs');
+const fs = require('fs'); 
+const aesjs = require('aes-js');
 
-let aesjs = require('aes-js');
 //let database = new Database('sqlitecloud://cjajv32esz.sqlite.cloud:8860?apikey=pqXdLE9WN4KJaubEtPay1bpQJ4z6AkqNCBQuyu4Y8qc') 
- 
-function DecryptFile(encryptedBytes, key) { 
-    // The counter mode of operation maintains internal state, so to
-    // decrypt a new instance must be instantiated.
-    var aesCtr = new aesjs.ModeOfOperation.ctr(key, new aesjs.Counter(5));
+  
+var key_128 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+var jwt_secret = 'b8JLCDtV5ce0yv5';
+var jwt = require('jsonwebtoken');
+
+const GenerarToken = (payload) => { 
+    const opciones = {
+        expiresIn: '1h',  
+    }; 
+    return jwt.sign(payload, jwt_secret, opciones);
+};  
+
+function DescifrarArchivo(encryptedBytes, key) {  
+    let aesCtr = new aesjs.ModeOfOperation.ctr(key, new aesjs.Counter(5));
     return aesCtr.decrypt(encryptedBytes);
 }
 
-function EncryptFile(textBytes, key) { 
-    //var textBytes = aesjs.utils.utf8.toBytes(file);
-    
-    // The counter is optional, and if omitted will begin at 1
-    var aesCtr = new aesjs.ModeOfOperation.ctr(key, new aesjs.Counter(5));
-    var encryptedBytes = aesCtr.encrypt(textBytes);
-  
-    // Convert our bytes back into text
-    return encryptedBytes; 
+function CifrarArchivo(textBytes, key) {    
+    let aesCtr = new aesjs.ModeOfOperation.ctr(key, new aesjs.Counter(5)); 
+    return aesCtr.encrypt(textBytes); 
 }
 
-function SaveBytes(path, data) {
+function GuardarBytes(path, data) {
     fs.writeFile(path, data, 'binary',  (err)=> {
         if (err) {
-            console.log("There was an error writing the image")
-        }
-        else {
-            console.log("Written File :" + path)
+            console.log("Ha habido un error al escribir un archivo: " + err);
+        } else {
+            console.log("Se ha guardado el archivo " + path);
         }
     }); 
 }
 
-function GetUserFromBearer(token) {
-    return "florian";
+const TokenValidation = (req, res, next) => { 
+    jwt.verify(req.headers.authorization, jwt_secret, (err, payload) => {
+        if (err) {
+            return res.status(403).json({
+                success: false,
+                message: 'Token inválido',
+            });
+        } else {
+            req.user = payload.user;
+            next();
+        }
+    }); 
 }
-
-var key_128 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
-
+ 
 const multer = require('multer'); 
 const upload = multer();
-app.post('/encrypt', upload.single('upload'), (req, res) => {
+app.post('/encrypt', upload.single('upload'), TokenValidation, (req, res) => {   
+
+    // Desactivar CORS (@TODO: Quitar esto en producción)
+    res.set('Access-Control-Allow-Origin', '*'); 
+    
     if (!req.file) {
-        return res.status(400).json({ error: 'No file uploaded' });
-    } else if (!req.headers['Authorization']) {
-        return res.status(400).json({ error: 'No token' });
+        return res.status(400).json({ error: 'No se ha subido ningún archivo' });
+    } else if (!req.headers.authorization) {
+        return res.status(400).json({ error: 'Token no recibido' });
     }
-
-    let token = req.headers['Authorization'];
-    let username = GetUserFromBearer(token);
-
-    let userFolder = `./uploads/${username}`;
-    fs.mkdir(userFolder, { recursive: true }, (err) => {
+ 
+    // Crear una carpeta para el usuario
+    let carpetaUsuario = `./uploads/${req.user}`;
+    fs.mkdir(carpetaUsuario, { recursive: true }, (err) => {
         if (err) throw err;
     }); 
 
-    let enc = EncryptFile(req.file.buffer, key_128);    
-    SaveBytes(`${userFolder}/enc_${req.file.originalname}`, enc);  
+    // Cifrar el archivo y guardarlo 
+    let datosCifrados = CifrarArchivo(req.file.buffer, key_128);    
+    GuardarBytes(`${carpetaUsuario}/enc_${req.file.originalname}`, datosCifrados);  
  
-    res.status(200).json({ message: `File ${req.file.originalname} uploaded!`});
+    res.status(200).json({ message: `Archivo ${req.file.originalname} subido!`, token: req.headers.authorization});
+}); 
+
+app.get('/token', (req, res) => {  
+    let newToken = GenerarToken({
+        user: 'florian' // @TODO: Hacer login para esto
+    });
+    res.status(200).json({ token: newToken });
 });
 
-app.get('/', async (req, res) => {  
-    //let results = database.sql`USE DATABASE cs; INSERT INTO usuarios (nombre) VALUES ("Paco"); SELECT * FROM usuarios` 
-    //let results = await database.sql`USE DATABASE cs; SELECT * FROM usuarios`
-    //res.send(results)
-
-    console.log(EncryptFile("abcde", key_128));
-});
-
+const cors = require("cors");
+app.use(cors());
 app.listen(3000) 
+console.log('Servidor iniciado en http://localhost:3000');
