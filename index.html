@@ -1,0 +1,22 @@
+<html>
+    <body>
+        <form action="http://localhost:3000/encrypt" method="post" enctype="multipart/form-data">
+            <input type="file" name="upload" />
+            <input type="text" name="username" />
+            <button type="" onclick="onSUbmit()">Ok</button>
+        </form>
+    </body>
+</html>
+<script>
+    function onSUbmit() {
+    var form = document.forms[0];
+    var data = new FormData(form);
+    fetch(form.action, { method: form.method, body: data, headers: { 'Content-Type': 'multipart/form-data', 'Authorization': 'token' } })
+    .then((response) => {
+    // handle response
+    }).catch((error) => {
+    // handle error
+    });
+
+    }
+</script>
