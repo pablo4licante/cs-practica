@@ -1,0 +1,7 @@
+{
+  "name": "RiceDrive",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}
