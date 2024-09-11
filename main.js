@@ -4,7 +4,7 @@ const app = express();
 const fs = require('fs'); 
 const aesjs = require('aes-js');
 
-//let database = new Database('sqlitecloud://cjajv32esz.sqlite.cloud:8860?apikey=pqXdLE9WN4KJaubEtPay1bpQJ4z6AkqNCBQuyu4Y8qc') 
+let database = new Database('sqlitecloud://cjajv32esz.sqlite.cloud:8860?apikey=pqXdLE9WN4KJaubEtPay1bpQJ4z6AkqNCBQuyu4Y8qc') 
   
 var key_128 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
 var jwt_secret = 'b8JLCDtV5ce0yv5';
@@ -16,28 +16,27 @@ const GenerarToken = (payload) => {
     }; 
     return jwt.sign(payload, jwt_secret, opciones);
 };  
-
-function DescifrarArchivo(encryptedBytes, key) {  
-    let aesCtr = new aesjs.ModeOfOperation.ctr(key, new aesjs.Counter(5));
-    return aesCtr.decrypt(encryptedBytes);
-}
-
+ 
 function CifrarArchivo(textBytes, key) {    
     let aesCtr = new aesjs.ModeOfOperation.ctr(key, new aesjs.Counter(5)); 
     return aesCtr.encrypt(textBytes); 
 }
 
-function GuardarBytes(path, data) {
-    fs.writeFile(path, data, 'binary',  (err)=> {
-        if (err) {
-            console.log("Ha habido un error al escribir un archivo: " + err);
-        } else {
-            console.log("Se ha guardado el archivo " + path);
-        }
-    }); 
+// @TODO: Esto no sé si funciona, faltan las tablas en la base de datos.
+async function GuardarArchivo(email, nombre, bytes) { 
+    // Convertir bytes a hexadecimal para poder guardarlos en la base de datos
+    let datosHex = aesjs.utils.hex.fromBytes(bytes);
+
+    // Obtener el ID del usuario
+    let idUsuario = await database.sql`USE DATABASE cs; SELECT id FROM usuarios WHERE email = ${email};` 
+
+    // Guardar el archivo en la base de datos
+    let results = await database.sql`USE DATABASE cs; INSERT INTO archivos (usuario, nombre, datos) VALUES (${idUsuario}, ${nombre}, ${datosHex});`
+     
+    console.log(`Se ha guardado el archivo ${nombre} -> ${results}`); 
 }
 
-const TokenValidation = (req, res, next) => { 
+const ValidarToken = (req, res, next) => { 
     jwt.verify(req.headers.authorization, jwt_secret, (err, payload) => {
         if (err) {
             return res.status(403).json({
@@ -46,6 +45,7 @@ const TokenValidation = (req, res, next) => {
             });
         } else {
             req.user = payload.user;
+            req.email = payload.email;
             next();
         }
     }); 
@@ -53,7 +53,7 @@ const TokenValidation = (req, res, next) => {
  
 const multer = require('multer'); 
 const upload = multer();
-app.post('/encrypt', upload.single('upload'), TokenValidation, (req, res) => {   
+app.post('/encrypt', upload.single('upload'), ValidarToken, (req, res) => {   
 
     // Desactivar CORS (@TODO: Quitar esto en producción)
     res.set('Access-Control-Allow-Origin', '*'); 
@@ -72,14 +72,15 @@ app.post('/encrypt', upload.single('upload'), TokenValidation, (req, res) => {
 
     // Cifrar el archivo y guardarlo 
     let datosCifrados = CifrarArchivo(req.file.buffer, key_128);    
-    GuardarBytes(`${carpetaUsuario}/enc_${req.file.originalname}`, datosCifrados);  
+    //GuardarArchivo(req.email, req.file.originalname, datosCifrados);  
  
     res.status(200).json({ message: `Archivo ${req.file.originalname} subido!`, token: req.headers.authorization});
 }); 
 
 app.get('/token', (req, res) => {  
     let newToken = GenerarToken({
-        user: 'florian' // @TODO: Hacer login para esto
+        email: 'fdd3@alu.ua.es',
+        user: 'florian', // @TODO: Hacer login para esto 
     });
     res.status(200).json({ token: newToken });
 });
