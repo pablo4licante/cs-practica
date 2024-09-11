@@ -1,8 +1,23 @@
 <ion-content [fullscreen]="true" >
     <div class="fullheight xc">
         <div class="vcs">
-    <ion-title>Rice Drive</ion-title>
-    <ion-button (click)="login()"></ion-button>
+            <div class="oval"></div>
+            <ion-title>Rice<i>🍙</i>Drive</ion-title>
+        <ion-text>secure and encrypted file hosting and sharing platform</ion-text>
+
+        <div class="form">
+            <ion-item>
+              <ion-input fill="outline" shape="round" label="Email" labelPlacement="floating" type="email" placeholder="Enter text" required></ion-input>
+            </ion-item>
+            <ion-item>
+                <ion-input fill="outline" shape="round" label="Password" type="password" labelPlacement="floating" placeholder="Enter text" required></ion-input>
+              </ion-item>
+            </div>
+
+        <ion-button (click)="login()"  shape="round">Log In</ion-button>
+        
+    </div>
 </div>
-</div>
+
+
 </ion-content>
