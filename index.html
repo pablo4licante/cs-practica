@@ -1,33 +1,22 @@
 <html>
     <body>
-        <form
-            action="http://localhost:3000/encrypt"
-            method="post"
-            enctype="multipart/form-data"
-        >
-            <input type="file" name="upload" />
-            <input type="text" name="username" />
-            <button type="" onclick="onSUbmit()">Ok</button>
+        <form method="post" enctype="multipart/form-data">
+            <input type="file" name="upload" /> 
         </form>
+        <button onclick="onSubmit()">Test</button>
     </body>
 </html>
 <script>
-    function onSUbmit() {
+    function onSubmit() {
         var form = document.forms[0];
         var data = new FormData(form);
-        fetch(form.action, {
-            method: form.method,
-            body: data,
-            headers: {
-                "Content-Type": "multipart/form-data",
-                Authorization: "token",
-            },
-        })
-        .then((response) => {
-            // handle response
-        })
-        .catch((error) => {
-            // handle error
-        });
+ 
+        const req = new XMLHttpRequest(); 
+        req.onload = (e) => {
+            console.log(req.responseText); 
+        };
+        req.open("POST", "http://localhost:3000/upload"); 
+        req.setRequestHeader('Authorization', 'Token');   
+        req.send(data); 
     }
 </script>

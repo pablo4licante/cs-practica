@@ -12,8 +12,29 @@ function SaveBytes(path, data) {
     });
 }
 
-function GetUserFromBearer(token) {
-    return "florian";
+var jwt_secret = 'b8JLCDtV5ce0yv5';
+var jwt = require('jsonwebtoken');
+
+const GenerarToken = (payload) => { 
+    const opciones = {
+        expiresIn: '1h',  
+    }; 
+    return jwt.sign(payload, jwt_secret, opciones);
+};  
+
+const ValidarToken = (req, res, next) => { 
+    jwt.verify(req.headers.authorization, jwt_secret, (err, payload) => {
+        if (err) {
+            return res.status(403).json({
+                success: false,
+                message: 'Token inválido',
+            });
+        } else {
+            req.user = payload.user;
+            req.email = payload.email;
+            next();
+        }
+    });
 }
 
 app.get("/test", (req, res) => {
@@ -48,7 +69,7 @@ app.post("/upload", upload.single("upload"), (req, res) => {
     }
 
     let token = req.headers["Authorization"];
-    let username = GetUserFromBearer(token);
+    let username = "usuario";// GetUserFromBearer(token);
 
     let userFolder = `./uploads/${username}`;
     fs.mkdir(userFolder, { recursive: true }, (err) => {
