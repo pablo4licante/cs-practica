@@ -3,13 +3,7 @@ const app = express();
 const fs = require("fs");
 
 function SaveBytes(path, data) {
-    fs.writeFile(path, data, "binary", (err) => {
-        if (err) {
-            console.log("There was an error writing the image");
-        } else {
-            console.log("Written File :" + path);
-        }
-    });
+    // Cosas de FTP
 }
 
 var jwt_secret = 'b8JLCDtV5ce0yv5';
@@ -75,9 +69,8 @@ app.post("/upload", upload.single("upload"), (req, res) => {
     fs.mkdir(userFolder, { recursive: true }, (err) => {
         if (err) throw err;
     });
-
-    let enc = EncryptFile(req.file.buffer, key_128);
-    SaveBytes(`${userFolder}/enc_${req.file.originalname}`, enc);
+ 
+    SaveBytes(`${userFolder}/enc_${req.file.originalname}`, req.file.buffer);
 
     res.status(200).json({
         message: `File ${req.file.originalname} uploaded!`,
@@ -88,7 +81,9 @@ app.get("/", async (req, res) => {
     //let results = database.sql`USE DATABASE cs; INSERT INTO usuarios (nombre) VALUES ("Paco"); SELECT * FROM usuarios`
     //let results = await database.sql`USE DATABASE cs; SELECT * FROM usuarios`
     //res.send(results)
-    console.log(EncryptFile("abcde", key_128));
+    res.status(200).json({
+        message: `ok!`,
+    });
 });
 
 app.listen(3000);
