@@ -2,8 +2,20 @@ const express = require("express");
 const app = express();
 const fs = require("fs");
 
-function SaveBytes(path, data) {
-    // Cosas de FTP
+function UploadBytes(filePath, path) {
+    var Client = require("ftp");
+    var c = new Client();
+    c.on("ready", function () {
+        console.log("ready");
+        c.put(filePath, `./htdocs/${path}`, function (err) {
+            console.log("put?");
+            if (err) throw err;
+
+            console.log(err);
+            c.end();
+        });
+    }); 
+    c.connect({host:"ftpupload.net", port:21, user:"if0_37322158", password:"rlVSmEn4uB3B52q"});
 }
 
 var jwt_secret = 'b8JLCDtV5ce0yv5';
@@ -32,30 +44,14 @@ const ValidarToken = (req, res, next) => {
 }
 
 app.get("/test", (req, res) => {
-    var Client = require("ftp");
-    var fs = require("fs");
-
-    var c = new Client();
-    c.on("ready", function () {
-        console.log("ready");
-        c.put("./foo.txt", "./htdocs/foo.txt", function (err) {
-            console.log("put?");
-            if (err) throw err;
-
-            console.log(err);
-            c.end();
-        });
-    }); 
-    
-    c.connect({host:"ftpupload.net", port:21, user:"if0_37322158", password:"rlVSmEn4uB3B52q"});
     res.status(200).json({
         message: `ok!`,
     });
 });
 
 const multer = require("multer");
-const upload = multer();
-app.post("/upload", upload.single("upload"), (req, res) => {
+const upload = multer({dest:'./tmp/'}).single('file');
+app.post("/upload", upload,  (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: "No file uploaded" });
     } else if (!req.headers["Authorization"]) {
@@ -63,14 +59,14 @@ app.post("/upload", upload.single("upload"), (req, res) => {
     }
 
     let token = req.headers["Authorization"];
-    let username = "usuario";// GetUserFromBearer(token);
+    let username = "usuario";
 
     let userFolder = `./uploads/${username}`;
     fs.mkdir(userFolder, { recursive: true }, (err) => {
         if (err) throw err;
     });
  
-    SaveBytes(`${userFolder}/enc_${req.file.originalname}`, req.file.buffer);
+    UploadBytes(req.file.path, `${userFolder}/enc_${req.file.originalname}`);
 
     res.status(200).json({
         message: `File ${req.file.originalname} uploaded!`,
