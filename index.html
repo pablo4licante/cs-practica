@@ -2,6 +2,12 @@
     <body>
         <form method="post" enctype="multipart/form-data">
             <input type="file" name="upload" /> 
+            <br>
+            <label for="fileKey">File Key:</label>
+            <input name="fileKey" />
+            <br>
+            <label for="token">Token:</label>
+            <input id="token" name="token"/>
         </form>
         <button onclick="onSubmit()">Test</button>
     </body>
@@ -10,13 +16,15 @@
     function onSubmit() {
         var form = document.forms[0];
         var data = new FormData(form);
+
+        var token = document.getElementById('token').value;
  
         const req = new XMLHttpRequest(); 
         req.onload = (e) => {
             console.log(req.responseText); 
         };
         req.open("POST", "http://localhost:3000/upload"); 
-        req.setRequestHeader('Authorization', 'Token');   
+        req.setRequestHeader('Authorization', token);    
         req.send(data); 
     }
 </script>

@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@sqlitecloud/drivers": "^1.0.255",
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "ftp": "^0.3.10",
