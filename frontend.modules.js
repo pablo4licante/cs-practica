@@ -1,0 +1,65 @@
+/*
+ * Este archivo tendra los diferentes modulos que se utilizaran en
+ * el frontend de la aplicacion.
+ * 
+ * En todo el documento AES se refiere a AES128.
+ */
+
+// ----------------------------------------------
+// MODULOS PARA GESTION DE USUARIOS
+// ----------------------------------------------
+
+// Modulo 2: Generar clave AES del usuario
+// Generar clave AES en base a la password del usuario (TODO form registro/login)
+// el modulo deberia devolver la clave AES
+
+
+// Modulo 3: Cifrar la clave privada
+// Cifrar la clave RSA privada (Modulo 1) con la clave AES (Modulo 2)
+// el modulo deberia devolver la clave RSA privada cifrada
+
+
+// Modulo 5: Pipeline de registro
+// Realizar el pipeline de registro de un usuario (Modulos 1, 2, 3 , 4, 10)
+// el modulo deberia devolver un mensaje de confirmacion
+
+
+// Modulo 10: Almacenar clave privada y JWT en local storage (LOGIN)
+// Almacenar la clave privada RSA descifrada y el JWT en local storage de manera temporal
+
+
+// ----------------------------------------------
+// MODULOS PARA CIFRADO DE ARCHIVOS
+// ----------------------------------------------
+
+// Modulo 6: Generar clave AES con seed aleatoria
+// Generar claves AES de manera aleatoria para cifrar archivos posteriormente
+// el modulo deberia devolver una clave AES valida
+
+
+// Modulo 7: Cifrar archivo
+// Cifrar un archivo con una clave AES (Modulo 6)
+// el modulo deberia devolver el archivo cifrado
+
+
+// Modulo 8: Cifrar la clave AES con clave publica RSA
+// Cifrar la clave AES (Modulo 6) con la clave publica RSA del usuario (Modulo 1)
+// el modulo deberia devolver la clave AES cifrada
+
+
+//----------------------------------------------
+// MODULOS PARA DESCIFRADO DE ARCHIVOS
+//----------------------------------------------
+
+// Modulo 12: Descifrar clave AES con clave privada RSA
+// Descifrar la clave AES cifrada con la clave privada RSA descifrada (Modulo 10)
+// el modulo deberia devolver la clave AES descifrada
+
+
+// Modulo 13: Descifrar archivo
+// Descifrar el archivo con la clave AES descifrada (Modulo 12)
+// el modulo deberia devolver el archivo descifrado
+
+
+// Modulo 14: Mostrar archivo descifrado
+// Mostrar el archivo descifrado al usuario
