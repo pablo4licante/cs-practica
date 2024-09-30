@@ -27,52 +27,57 @@ async function SubirArchivo(filePath, folder, userID, fileKey) {
     console.log(`Subiendo archivo: ${filePath} en ${folder} de usuario ${userID} + clave ${fileKey}`);
     let rutaArchivos = `./htdocs/uploads`;
     var c = new ftp();
-    c.on("ready", function () { 
-        c.list(rutaArchivos, function (err, list) { 
-            if (err) throw err; 
-            // Comprobar si la carpeta para usuario existe
-            let carpetaExiste = false;
-            for (let i = 0; i < list.length; i++) {
-                if(list[i].name == folder) { 
-                    carpetaExiste = true;
-                    break;
+    c.on("ready", function () {
+        try { 
+            c.list(rutaArchivos, function (err, list) { 
+                if (err) throw err; 
+                // Comprobar si la carpeta para usuario existe
+                let carpetaExiste = false;
+                for (let i = 0; i < list.length; i++) {
+                    if(list[i].name == folder) { 
+                        carpetaExiste = true;
+                        break;
+                    }
                 }
-            }
-            // Crear nueva carpeta si es necesario
-            if(!carpetaExiste) { 
-                c.mkdir(`${rutaArchivos}/${folder}`, true, function (err) {
+                // Crear nueva carpeta si es necesario
+                if(!carpetaExiste) { 
+                    c.mkdir(`${rutaArchivos}/${folder}`, true, function (err) {
+                        if (err) throw err;
+                        console.log(`Carpeta creada para usuario: ${folder}`);
+                    });
+                }
+
+                // Nombre del archivo
+                let fileName = `file${moment().valueOf()}`;
+
+                // Almacenar archivo en la carpeta del usuario
+                const destino = `${rutaArchivos}/${folder}/${fileName}`;
+                console.log(`Subiendo archivo: ${fileName} en ${destino}`); 
+                c.put(filePath, destino, async function (err) { 
                     if (err) throw err;
-                    console.log(`Carpeta creada para usuario: ${folder}`);
-                });
-            }
+                    console.log(`Archivo subido: ${fileName} (${destino})`); 
 
-            // Nombre del archivo
-            let fileName = `file${moment().valueOf()}`;
-
-            // Almacenar archivo en la carpeta del usuario
-            const destino = `${rutaArchivos}/${folder}/${fileName}`;
-            console.log(`Subiendo archivo: ${fileName} en ${destino}`); 
-            c.put(filePath, destino, async function (err) { 
-                if (err) throw err;
-                console.log(`Archivo subido: ${fileName} (${destino})`); 
-
-                // Almacenar archivo en db
-                let result = await database.sql`USE DATABASE cs; 
-                INSERT INTO FILES (URL, METADATA) 
-                VALUES ("${folder}/${fileName}", "metapod")`;
- 
-                let fileID = result.lastID; 
-            
-                // Crear relacion entre archivo y usuario en db
-                await database.sql`USE DATABASE cs; 
-                INSERT INTO ACCESS (FILE, USER, FILEKEY) 
-                VALUES (${fileID}, ${userID}, "${fileKey}")`;
+                    // Almacenar archivo en db
+                    let result = await database.sql`USE DATABASE cs; 
+                    INSERT INTO FILES (URL, METADATA) 
+                    VALUES ("${folder}/${fileName}", "metapod")`;
+    
+                    let fileID = result.lastID; 
                 
-                // Eliminar archivo temporal    
-                EliminarArchivo(filePath);
-            });
-            c.end();
-        }); 
+                    // Crear relacion entre archivo y usuario en db
+                    await database.sql`USE DATABASE cs; 
+                    INSERT INTO ACCESS (FILE, USER, FILEKEY) 
+                    VALUES (${fileID}, ${userID}, "${fileKey}")`;
+                    
+                    // Eliminar archivo temporal    
+                    EliminarArchivo(filePath);
+                });
+                c.end();
+            }); 
+        }catch (e) {
+            // Eliminar archivo temporal    
+            EliminarArchivo(filePath);
+        }
     }); 
     c.connect({host:"ftpupload.net", port:21, user:"if0_37322158", password:"rlVSmEn4uB3B52q"});
 }
@@ -110,13 +115,9 @@ app.post("/upload", ValidarToken, upload.single('upload'), async (req, res) => {
         return res.status(400).json({ error: "No file uploaded" });
     }
  
-    let username = "usuario"; 
-    let userFolder = username;
-    fs.mkdir(userFolder, { recursive: true }, (err) => {
-        if (err) throw err;
-    });
+    let username = "usuario";  
     
-    SubirArchivo(`./${req.file.path}`, userFolder, req.userID, req.fileKey);
+    SubirArchivo(`./${req.file.path}`, username, req.userID, req.fileKey);
 
     res.status(200).json({
         message: `File ${req.file.originalname} uploaded`,
