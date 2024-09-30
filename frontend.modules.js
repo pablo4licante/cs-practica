@@ -7,7 +7,6 @@
 
 import aesjs from 'aes-js';
 
-
 // ----------------------------------------------
 // MODULOS PARA GESTION DE USUARIOS
 // ----------------------------------------------
@@ -31,41 +30,30 @@ export function generarClaveAES(pass) {
    }
 }
 
+
+
+
 // Modulo 3: Cifrar la clave privada
 // Cifrar la clave RSA privada (Modulo 1) con la clave AES (Modulo 2)
 // el modulo deberia devolver la clave RSA privada cifrada
 
-export function cifrarRSAPrivada() {
-  // An example 128-bit key (16 bytes * 8 bits/byte = 128 bits)
-  var key = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+export function cifrarRSAPrivada(RSA_private_key, clave_AES) {
+  // todos los text son RSA_private_key y todos los key es clave AES128 (key de 128bits obligatoriamente)
+  // rsa en bytes
+  var RSA_private_key_Bytes = aesjs.utils.utf8.toBytes(RSA_private_key);
 
-  // Convert text to bytes
-  var text = "Pepe se ha comido un pollo  al horno con patatas.";
-  var textBytes = aesjs.utils.utf8.toBytes(text);
+  // contador de 5, se puede quitar y empezaría en 1 (poner el mismo en modulo de descrifrar)
+  var aesCtr = new aesjs.ModeOfOperation.ctr(clave_AES, new aesjs.Counter(5));
+  var RSA_private_key_Bytes_Encrypted = aesCtr.encrypt(RSA_private_key_Bytes);
 
-  // The counter is optional, and if omitted will begin at 1
-  var aesCtr = new aesjs.ModeOfOperation.ctr(key, new aesjs.Counter(5));
-  var encryptedBytes = aesCtr.encrypt(textBytes);
-
-  // To print or store the binary data, you may convert it to hex
-  var encryptedHex = aesjs.utils.hex.fromBytes(encryptedBytes);
-  console.log(encryptedHex);
-  // "a338eda3874ed884b6199150d36f49988c90f5c47fe7792b0cf8c7f77eeffd87
-  //  ea145b73e82aefcf2076f881c88879e4e25b1d7b24ba2788"
-
-  // When ready to decrypt the hex string, convert it back to bytes
-  var encryptedBytes = aesjs.utils.hex.toBytes(encryptedHex);
-
-  // The counter mode of operation maintains internal state, so to
-  // decrypt a new instance must be instantiated.
-  var aesCtr = new aesjs.ModeOfOperation.ctr(key, new aesjs.Counter(5));
-  var decryptedBytes = aesCtr.decrypt(encryptedBytes);
-
-  // Convert our bytes back into text
-  var decryptedText = aesjs.utils.utf8.fromBytes(decryptedBytes);
-  console.log(decryptedText);
-  // "Pepe se ha comido un pollo  al horno con patatas."
+  // convertir rsa en hexadecimal para guardarlo asi en la bd
+  var RSA_private_key_Hex_Encrypted = aesjs.utils.hex.fromBytes(RSA_private_key_Bytes_Encrypted);
+  return RSA_private_key_Hex_Encrypted;
+  // devuelve clave RSA cifrada (en hexadecimal)
 }
+
+
+
 
 // Modulo 5: Pipeline de registro
 // Realizar el pipeline de registro de un usuario (Modulos 1, 2, 3 , 4, 10)
@@ -80,7 +68,33 @@ export function cifrarRSAPrivada() {
 
 // Modulo 6: Generar clave AES con seed aleatoria
 // Generar claves AES de manera aleatoria para cifrar archivos posteriormente
-// el modulo deberia devolver una clave AES valida
+// el modulo deberia devolver una clave AES valida (en hexadecimal)
+
+export async function generar_Clave_AES_Random() {
+  // Función que genera una clave AES aleatoria y la devuelve en formato hexadecimal
+  const key = await crypto.subtle.generateKey(
+    {
+      name: "AES-GCM", // AES en modo GCM
+      length: 128,     // Longitud de la clave: 128 bits
+    },
+    true,              // Permite exportar la clave
+    ["encrypt", "decrypt"]  // Usos permitidos de la clave
+  );
+  
+  // Exporta la clave en formato binario
+  const clave_AES_Bytes = await crypto.subtle.exportKey("raw", key);
+  const clave_AES_Array = new Uint8Array(clave_AES_Bytes); // Convierte a Uint8Array para manipularla
+  
+  // Convierte el Uint8Array a una cadena hexadecimal
+  const clave_AES_Hex = Array.from(clave_AES_Array)
+    .map(byte => byte.toString(16).padStart(2, '0'))  // Convierte cada byte a hexadecimal
+    .join('');                                        // Une todos los bytes en un string
+
+
+  console.log(clave_AES_Hex);
+  return clave_AES_Hex; // Devuelve la clave en formato hexadecimal
+}
+
 
 // Modulo 7: Cifrar archivo
 // Cifrar un archivo con una clave AES (Modulo 6)
