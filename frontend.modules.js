@@ -5,7 +5,7 @@
  * En todo el documento AES se refiere a AES128.
  */
 
-var aesjs = require('aes-js');
+import aesjs from 'aes-js';
 
 
 // ----------------------------------------------
@@ -20,14 +20,13 @@ var aesjs = require('aes-js');
 
 export function generarClaveAES(pass) {
    //var pass = "EstaEsMiPassword" //se necesita un bloque de 16 bytes como este
-   const stringBytes = new TextEncoder.encode(pass);
+   const stringBytes = new TextEncoder().encode(pass);
    if (stringBytes.length === 16) {
       // Si cumple, se genera la clave
       var claveAES = aesjs.utils.utf8.toBytes(pass);
-      console.log("Esta es la clave:" + claveAES);
       return claveAES;
    } else {
-      // Si no cumple, aborta ()
+      // Si no cumple, aborta
       console.error("Error: El string no tiene exactamente 16 bytes. Operación abortada.");
    }
 }
