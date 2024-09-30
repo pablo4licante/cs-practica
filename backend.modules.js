@@ -6,7 +6,8 @@
 
 import { Database } from '@sqlitecloud/drivers';
 
-const db = new Database(sqlitecloud://cjajv32esz.sqlite.cloud:8860/cs?apikey=pqXdLE9WN4KJaubEtPay1bpQJ4z6AkqNCBQuyu4Y8qc);
+const db = new Database('sqlitecloud://cjajv32esz.sqlite.cloud:8860/cs?apikey=pqXdLE9WN4KJaubEtPay1bpQJ4z6AkqNCBQuyu4Y8qc');
+console.log('Base de datos conectada');
 
 // ----------------------------------------------
 // MODULOS PARA GESTION DE USUARIOS
@@ -20,13 +21,30 @@ const db = new Database(sqlitecloud://cjajv32esz.sqlite.cloud:8860/cs?apikey=pqX
 // Modulo 4: Almacenar claves RSA en el servidor
 // Almacenar las claves RSA publica y privada cifrada en el servidor
 // el modulo deberia devolver un mensaje de confirmacion
-export function guardarClavesRSA(email, public_key, private_key) {
-        db.sql('SELECT id FROM users WHERE email = ?', [email], (err, res) => {
-                if(err) {
-                        console.log(err);
-                        return err;
-                }
+
+export async function guardarClavesRSA(email, public_key, private_key) {
+    try {
+        console.log('Buscando usuario con email:', email);
+        
+        // Realiza la consulta para obtener el ID del usuario
+        const res = await db.sql`SELECT ID FROM USERS WHERE EMAIL = ${email};`;
+        console.log('Resultado de búsqueda de usuario:', res);
+
+        if (res.length > 0) {
+            const user_id = res[0].ID;
+
+            // Inserta las claves RSA en la tabla KEYS
+            const insertResult = await db.sql`INSERT INTO KEYS (USER_ID, PUBLIC_KEY, PRIVATE_KEY) VALUES (${user_id}, ${public_key}, ${private_key});`;
+            console.log('Resultado de la inserción:', insertResult);
+
+            return 'Claves RSA guardadas con éxito';
+        } else {
+            throw new Error('Usuario no encontrado');
         }
+    } catch (error) {
+        console.error('Error en guardarClavesRSA:', error);
+        throw error;
+    }
 }
 
 // ----------------------------------------------
