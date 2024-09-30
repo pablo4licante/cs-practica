@@ -130,3 +130,5 @@ dist
 .pnp.*
 
 test.js
+main.js
+index.html

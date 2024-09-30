@@ -4,7 +4,11 @@
  * 
  */
 
-import { Database } from '@sqlitecloud/drivers';
+const { Database } = require('@sqlitecloud/drivers');
+
+const fs = require('fs');
+const ftp = require('ftp');
+const moment = require('moment');
 
 const db = new Database('sqlitecloud://cjajv32esz.sqlite.cloud:8860/cs?apikey=pqXdLE9WN4KJaubEtPay1bpQJ4z6AkqNCBQuyu4Y8qc');
 console.log('Base de datos conectada');
@@ -22,7 +26,7 @@ console.log('Base de datos conectada');
 // Almacenar las claves RSA publica y privada cifrada en el servidor
 // el modulo deberia devolver un mensaje de confirmacion
 
-export async function guardarClavesRSA(email, public_key, private_key) {
+async function guardarClavesRSA(email, public_key, private_key) {
     try {
         console.log('Buscando usuario con email:', email);
         
@@ -48,14 +52,102 @@ export async function guardarClavesRSA(email, public_key, private_key) {
 }
 
 // ----------------------------------------------
-// MODULOS PARA CIFRADO DE ARCHIVOS
+// MODULOS PARA LA SUBIDA DE ARCHIVOS MEDIANTE FTP
 // ----------------------------------------------
 
-// Modulo 9: Almacenar archivo y clave AES cifrada en el servidor
-// CHECK CODIGO @Florian, subida del archivo al servidor FTP y 
-// guardar registro en la DB del archivo junto a la clave AES cifrada.
-// el modulo deberia devolver un mensaje de confirmacion
+let datos_ftp = {
+    host: "ftpupload.net", 
+    port: 21, 
+    user: "if0_37322158", 
+    password: "rlVSmEn4uB3B52q",
+}; 
+const ruta_ftp = `./htdocs/uploads`;
 
+function eliminarArchivo(file_path) {
+    fs.unlink(file_path, (err) => { 
+        if (err) throw err;
+        console.log(`Archivo eliminado: ${file_path}`);
+    });
+}
+ 
+async function subirArchivo(file_path, metadata, usuario, user_id, private_key) {
+    if(!private_key) { 
+        // Eliminar archivo temporal    
+        eliminarArchivo(file_path); 
+        return {status:400, message:'Error al subir el archivo, clave privada no especificada'};
+    } 
+    return new Promise((resolve, reject) => {
+        var c = new ftp();
+        c.on("error", function (e) {     
+            // Eliminar archivo temporal    
+            eliminarArchivo(file_path);   
+            console.log(`${e} al subir el archivo: ${file_path} subido por ${usuario}(${user_id}) con clave ${private_key}`);
+            reject({status:500, message:`Error al subir el archivo: ${e}`});
+        });   
+        c.on("ready", async function () {   
+            try {  
+                c.list(ruta_ftp, async function (err, list) { 
+                    if (err) throw err; 
+
+                    // Comprobar si la carpeta para usuario existe
+                    let carpetaExiste = false;
+                    for (let i = 0; i < list.length; i++) {
+                        if(list[i].name == usuario) { 
+                            carpetaExiste = true;
+                            break;
+                        }
+                    }  
+                    // Crear nueva carpeta si es necesario
+                    if(!carpetaExiste) { 
+                        await c.mkdir(`${ruta_ftp}/${usuario}`, true, async function (err) {
+                            if (err) throw err; 
+                            console.log(`Carpeta creada para usuario: ${usuario}`);
+                        });
+                    } 
+ 
+                    // Nombre y ruta del archivo
+                    let file_name = `file${moment().valueOf()}`; 
+                    let path = `${usuario}/${file_name}`;
+                     
+                    // Almacenar archivo en db
+                    let result = await db.sql`USE DATABASE cs; 
+                    INSERT INTO FILES (URL, METADATA) 
+                    VALUES (${path}, ${JSON.stringify(metadata)})`;
+                    
+                    // ID generada por la base de datos
+                    let file_id = result.lastID; 
+                  
+                    // Crear relacion entre archivo y usuario en db
+                    await db.sql`USE DATABASE cs; 
+                    INSERT INTO ACCESS (FILE, USER, FILEKEY) 
+                    VALUES (${file_id}, ${user_id}, "${private_key}")`;
+  
+                    // Almacenar archivo en la carpeta del usuario con ftp
+                    const destino = `${ruta_ftp}/${path}`;  
+                    await c.put(file_path, destino, async function (err) { 
+                        if (err) throw err;
+
+                        console.log(`Archivo ${file_path} subido por ${usuario}(${user_id}) con clave ${private_key}`);
+                       
+                        // Eliminar archivo temporal    
+                        eliminarArchivo(file_path); 
+                        
+                        // Cerrar conexión
+                        c.end(); 
+
+                        resolve({status:200, message:'Archivo subido con éxito'});
+                    }); 
+                });  
+            }catch (e) {   
+                // Eliminar archivo temporal    
+                eliminarArchivo(file_path); 
+                console.log(`${e} al subir el archivo: ${file_path} subido por ${usuario}(${user_id}) con clave ${private_key}`);
+                reject({status:500, message:`Error al subir el archivo: ${e}`});
+            }
+        });  
+        c.connect(datos_ftp); 
+    });
+} 
 
 //----------------------------------------------
 // MODULOS PARA DESCIFRADO DE ARCHIVOS
@@ -64,8 +156,8 @@ export async function guardarClavesRSA(email, public_key, private_key) {
 // Modulo 11: Obtener archivo junto a su clave AES
 // Obtener el archivo cifrado y la clave AES cifrada del servidor FTP
 // el modulo deberia devolver el archivo y la clave AES cifrada
-
-
-
-
-
+ 
+module.exports = {
+    guardarClavesRSA,
+    subirArchivo,
+};
