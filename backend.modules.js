@@ -10,6 +10,10 @@ const fs = require('fs');
 const ftp = require('ftp');
 const moment = require('moment');
 
+// TODO ESCONDER TOKEN SECRET
+const secret = 'secret';
+const jwt = require('jsonwebtoken')
+
 const db = new Database('sqlitecloud://cjajv32esz.sqlite.cloud:8860/cs?apikey=pqXdLE9WN4KJaubEtPay1bpQJ4z6AkqNCBQuyu4Y8qc');
 console.log('Base de datos conectada');
 
@@ -156,7 +160,44 @@ async function subirArchivo(file_path, metadata, usuario, user_id, private_key) 
 // Modulo 11: Obtener archivo junto a su clave AES
 // Obtener el archivo cifrado y la clave AES cifrada del servidor FTP
 // el modulo deberia devolver el archivo y la clave AES cifrada
+
  
+
+
+
+
+// Modulo 12: Devolver la informacion de todos los archivos de un usuario.
+// Hay que pasarle el token del usuario y y devuelve la informacion de todos los archivos
+// de ese usuario
+
+export async function obtenerArchivosUsuario(token) {
+    
+    try {
+        // Verifica el token
+        const decoded = jwt.verify(token, secret);
+        console.log('Token decodificado:', decoded);
+
+        const res = await db.sql`SELECT ID FROM USERS WHERE EMAIL = ${decoded.email};`;
+        console.log('Resultado de búsqueda de usuario:', res);
+
+        if (res.length > 0) {
+            const user_id = res[0].ID;
+
+            const files = await db.sql`SELECT f.* FROM FILES f JOIN ACCESS a ON f.ID = a.FILE WHERE a.USER = ?;`([user_id]);
+            console.log('Archivos del usuario:', files);
+
+            return files;
+        } else {
+            throw new Error('Usuario no encontrado');
+        }
+    } catch (error) {
+        console.error('Error en obtenerArchivosUsuario:', error);
+        throw error;
+    }
+}
+
+
+
 module.exports = {
     guardarClavesRSA,
     subirArchivo,
