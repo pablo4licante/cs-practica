@@ -1,3 +1,6 @@
-import { cifrarRSAPrivada } from "./frontend.modules.js";
+import { generar_Clave_AES_Random } from "./frontend.modules.js";
 
-console.log('Clave cifrada es ' + cifrarRSAPrivada());
+generar_Clave_AES_Random().then(clave_AES_Hex => {
+    console.log("Clave AES en hexadecimal:", clave_AES_Hex);
+  });
+

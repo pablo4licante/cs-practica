@@ -53,7 +53,33 @@ export function cifrarRSAPrivada(RSA_private_key, clave_AES) {
 
 // Modulo 6: Generar clave AES con seed aleatoria
 // Generar claves AES de manera aleatoria para cifrar archivos posteriormente
-// el modulo deberia devolver una clave AES valida
+// el modulo deberia devolver una clave AES valida (en hexadecimal)
+
+export async function generar_Clave_AES_Random() {
+  // Función que genera una clave AES aleatoria y la devuelve en formato hexadecimal
+  const key = await crypto.subtle.generateKey(
+    {
+      name: "AES-GCM", // AES en modo GCM
+      length: 128,     // Longitud de la clave: 128 bits
+    },
+    true,              // Permite exportar la clave
+    ["encrypt", "decrypt"]  // Usos permitidos de la clave
+  );
+  
+  // Exporta la clave en formato binario
+  const clave_AES_Bytes = await crypto.subtle.exportKey("raw", key);
+  const clave_AES_Array = new Uint8Array(clave_AES_Bytes); // Convierte a Uint8Array para manipularla
+  
+  // Convierte el Uint8Array a una cadena hexadecimal
+  const clave_AES_Hex = Array.from(clave_AES_Array)
+    .map(byte => byte.toString(16).padStart(2, '0'))  // Convierte cada byte a hexadecimal
+    .join('');                                        // Une todos los bytes en un string
+
+
+  console.log(clave_AES_Hex);
+  return clave_AES_Hex; // Devuelve la clave en formato hexadecimal
+}
+
 
 // Modulo 7: Cifrar archivo
 // Cifrar un archivo con una clave AES (Modulo 6)
