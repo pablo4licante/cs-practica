@@ -5,6 +5,9 @@
  * En todo el documento AES se refiere a AES128.
  */
 
+var aesjs = require('aes-js');
+
+
 // ----------------------------------------------
 // MODULOS PARA GESTION DE USUARIOS
 // ----------------------------------------------
