@@ -66,6 +66,29 @@ export async function guardarClavesRSA(email, public_key, private_key) {
 // el modulo deberia devolver el archivo y la clave AES cifrada
 
 
+// Modulo 12: Devolver la informacion de todos los archivos de un usuario.
 
+// AVISO IMPORTANTE: ESTA EN BOILERPLATE PARA MOSTRAR COSAS, NO ESTA HECHO
 
-
+export function getArchivos() {
+    return [
+        {
+            nombre: 'archivo1',
+            tamano: '1MB',
+            url: 'https://i.blogs.es/0ca9a6/aa/1366_2000.jpeg',
+            id: 1
+        },
+        {
+            nombre: 'archivo2',
+            tamano: '2MB',
+            url: 'https://st.depositphotos.com/1016440/2534/i/450/depositphotos_25344733-stock-photo-sunrise-at-the-beach.jpg',
+            id: 2
+        },
+        {
+            nombre: 'archivo3',
+            tamano: '3MB',
+            url: 'https://img.freepik.com/foto-gratis/pico-montana-nevada-majestuosidad-galaxia-estrellada-ia-generativa_188544-9650.jpg',
+            id: 3
+        }
+    ];
+}

@@ -8,6 +8,11 @@
         },
         "dependencies": {
                 "@sqlitecloud/drivers": "^1.0.255",
-                "aes-js": "^3.1.2"
+                "aes-js": "^3.1.2",
+                "cors": "^2.8.5",
+                "express": "^4.21.0"
+        },
+        "devDependencies": {
+                "http-server": "^14.1.1"
         }
 }
