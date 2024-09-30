@@ -4,6 +4,10 @@
  * 
  */
 
+// TODO ESCONDER TOKEN SECRET
+const secret = 'secret';
+
+import { jwt } from 'jsonwebtoken';
 import { Database } from '@sqlitecloud/drivers';
 
 const db = new Database('sqlitecloud://cjajv32esz.sqlite.cloud:8860/cs?apikey=pqXdLE9WN4KJaubEtPay1bpQJ4z6AkqNCBQuyu4Y8qc');
@@ -67,28 +71,31 @@ export async function guardarClavesRSA(email, public_key, private_key) {
 
 
 // Modulo 12: Devolver la informacion de todos los archivos de un usuario.
+// Hay que pasarle el token del usuario y y devuelve la informacion de todos los archivos
+// de ese usuario
 
-// AVISO IMPORTANTE: ESTA EN BOILERPLATE PARA MOSTRAR COSAS, NO ESTA HECHO
+export async function obtenerArchivosUsuario(token) {
+    
+    try {
+        // Verifica el token
+        const decoded = jwt.verify(token, secret);
+        console.log('Token decodificado:', decoded);
 
-export function getArchivos() {
-    return [
-        {
-            nombre: 'archivo1',
-            tamano: '1MB',
-            url: 'https://i.blogs.es/0ca9a6/aa/1366_2000.jpeg',
-            id: 1
-        },
-        {
-            nombre: 'archivo2',
-            tamano: '2MB',
-            url: 'https://st.depositphotos.com/1016440/2534/i/450/depositphotos_25344733-stock-photo-sunrise-at-the-beach.jpg',
-            id: 2
-        },
-        {
-            nombre: 'archivo3',
-            tamano: '3MB',
-            url: 'https://img.freepik.com/foto-gratis/pico-montana-nevada-majestuosidad-galaxia-estrellada-ia-generativa_188544-9650.jpg',
-            id: 3
+        const res = await db.sql`SELECT ID FROM USERS WHERE EMAIL = ${decoded.email};`;
+        console.log('Resultado de búsqueda de usuario:', res);
+
+        if (res.length > 0) {
+            const user_id = res[0].ID;
+
+            const files = await db.sql`SELECT f.* FROM FILES f JOIN ACCESS a ON f.ID = a.FILE WHERE a.USER = ?;`([user_id]);
+            console.log('Archivos del usuario:', files);
+
+            return files;
+        } else {
+            throw new Error('Usuario no encontrado');
         }
-    ];
+    } catch (error) {
+        console.error('Error en obtenerArchivosUsuario:', error);
+        throw error;
+    }
 }
