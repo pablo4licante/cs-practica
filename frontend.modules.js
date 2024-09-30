@@ -14,7 +14,23 @@ var aesjs = require('aes-js');
 
 // Modulo 2: Generar clave AES del usuario
 // Generar clave AES en base a la password del usuario (TODO form registro/login)
-// el modulo deberia devolver la clave AES
+// la entrada debe ser un string de 16 bytes
+// el modulo deberia devolver la clave AES 
+// MAXIMO
+
+export function generarClaveAES(pass) {
+   //var pass = "EstaEsMiPassword" //se necesita un bloque de 16 bytes como este
+   const stringBytes = new TextEncoder.encode(pass);
+   if (stringBytes.length === 16) {
+      // Si cumple, se genera la clave
+      var claveAES = aesjs.utils.utf8.toBytes(pass);
+      console.log("Esta es la clave:" + claveAES);
+      return claveAES;
+   } else {
+      // Si no cumple, aborta ()
+      console.error("Error: El string no tiene exactamente 16 bytes. Operación abortada.");
+   }
+}
 
 // Modulo 3: Cifrar la clave privada
 // Cifrar la clave RSA privada (Modulo 1) con la clave AES (Modulo 2)
@@ -70,6 +86,11 @@ export function cifrarRSAPrivada() {
 // Modulo 7: Cifrar archivo
 // Cifrar un archivo con una clave AES (Modulo 6)
 // el modulo deberia devolver el archivo cifrado
+// MAXIMO
+
+export function cifrarArchivo() {
+
+}
 
 // Modulo 8: Cifrar la clave AES con clave publica RSA
 // Cifrar la clave AES (Modulo 6) con la clave publica RSA del usuario (Modulo 1)
@@ -86,6 +107,7 @@ export function cifrarRSAPrivada() {
 // Modulo 13: Descifrar archivo
 // Descifrar el archivo con la clave AES descifrada (Modulo 12)
 // el modulo deberia devolver el archivo descifrado
+// MAXIMO
 
 // Modulo 14: Mostrar archivo descifrado
 // Mostrar el archivo descifrado al usuario
