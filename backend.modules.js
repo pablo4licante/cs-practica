@@ -4,6 +4,10 @@
  * 
  */
 
+import { Database } from '@sqlitecloud/drivers';
+
+const db = new Database(sqlitecloud://cjajv32esz.sqlite.cloud:8860/cs?apikey=pqXdLE9WN4KJaubEtPay1bpQJ4z6AkqNCBQuyu4Y8qc);
+
 // ----------------------------------------------
 // MODULOS PARA GESTION DE USUARIOS
 // ----------------------------------------------
@@ -16,7 +20,14 @@
 // Modulo 4: Almacenar claves RSA en el servidor
 // Almacenar las claves RSA publica y privada cifrada en el servidor
 // el modulo deberia devolver un mensaje de confirmacion
-
+export function guardarClavesRSA(email, public_key, private_key) {
+        db.sql('SELECT id FROM users WHERE email = ?', [email], (err, res) => {
+                if(err) {
+                        console.log(err);
+                        return err;
+                }
+        }
+}
 
 // ----------------------------------------------
 // MODULOS PARA CIFRADO DE ARCHIVOS
@@ -35,3 +46,8 @@
 // Modulo 11: Obtener archivo junto a su clave AES
 // Obtener el archivo cifrado y la clave AES cifrada del servidor FTP
 // el modulo deberia devolver el archivo y la clave AES cifrada
+
+
+
+
+
