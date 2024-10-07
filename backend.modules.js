@@ -24,7 +24,25 @@ console.log('Base de datos conectada');
 // Modulo 1: Generar claves RSA
 // Generar claves RSA de manera aleatoria 
 // el modulo deberia devolver las dos claves en un objeto JSON
+function generarClavesRSA(contrasenya){
+    var { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
+        modulusLength: 2048,  // Tamaño del módulo (n) en bits
+        publicKeyEncoding: {
+            type: 'spki',     // Formato de la clave pública
+            format: 'pem'     // Codificación en formato PEM (Base64)
+        },
+        privateKeyEncoding: {
+            type: 'pkcs8',    // Formato de la clave privada
+            format: 'pem',    // Codificación en formato PEM (Base64)
+            cipher: 'aes-256-cbc', // (Opcional) Cifrado para proteger la clave privada
+            passphrase: contrasenya // Contraseña para proteger la clave privada (opcional)
+        }
+    });
 
+    //Devolver JSON
+    const claves={publica:publicKey, privada:privateKey};
+    return claves;
+}
 
 // Modulo 4: Almacenar claves RSA en el servidor
 // Almacenar las claves RSA publica y privada cifrada en el servidor
@@ -66,8 +84,8 @@ let datos_ftp = {
     password: "rlVSmEn4uB3B52q",
 }; 
 const ruta_ftp = `./htdocs/uploads`;
-
-function eliminarArchivo(file_path) {
+ 
+function eliminarArchivoLocal(file_path) {
     fs.unlink(file_path, (err) => { 
         if (err) throw err;
         console.log(`Archivo eliminado: ${file_path}`);
@@ -77,14 +95,14 @@ function eliminarArchivo(file_path) {
 async function subirArchivo(file_path, metadata, usuario, user_id, private_key) {
     if(!private_key) { 
         // Eliminar archivo temporal    
-        eliminarArchivo(file_path); 
+        eliminarArchivoLocal(file_path); 
         return {status:400, message:'Error al subir el archivo, clave privada no especificada'};
     } 
     return new Promise((resolve, reject) => {
         var c = new ftp();
         c.on("error", function (e) {     
             // Eliminar archivo temporal    
-            eliminarArchivo(file_path);   
+            eliminarArchivoLocal(file_path);   
             console.log(`${e} al subir el archivo: ${file_path} subido por ${usuario}(${user_id}) con clave ${private_key}`);
             reject({status:500, message:`Error al subir el archivo: ${e}`});
         });   
@@ -134,7 +152,7 @@ async function subirArchivo(file_path, metadata, usuario, user_id, private_key) 
                         console.log(`Archivo ${file_path} subido por ${usuario}(${user_id}) con clave ${private_key}`);
                        
                         // Eliminar archivo temporal    
-                        eliminarArchivo(file_path); 
+                        eliminarArchivoLocal(file_path); 
                         
                         // Cerrar conexión
                         c.end(); 
@@ -144,7 +162,7 @@ async function subirArchivo(file_path, metadata, usuario, user_id, private_key) 
                 });  
             }catch (e) {   
                 // Eliminar archivo temporal    
-                eliminarArchivo(file_path); 
+                eliminarArchivoLocal(file_path); 
                 console.log(`${e} al subir el archivo: ${file_path} subido por ${usuario}(${user_id}) con clave ${private_key}`);
                 reject({status:500, message:`Error al subir el archivo: ${e}`});
             }
@@ -194,35 +212,69 @@ async function obtenerArchivoyAES(token) {
 // de ese usuario
 
 async function obtenerArchivosUsuario(token) {
-    
-    try {
-        // Verifica el token
-        const decoded = jwt.verify(token, secret);
-        console.log('Token decodificado:', decoded);
+    return new Promise((resolve, reject) =>  { 
+        let obtener = async () => { 
+            try {
+                // Verifica el token
+                const decoded = jwt.verify(token, secret);
+                console.log('Token decodificado:', decoded);
 
-        const res = await db.sql`SELECT ID FROM USERS WHERE EMAIL = ${decoded.email};`;
-        console.log('Resultado de búsqueda de usuario:', res);
+                const res = await db.sql`SELECT ID FROM USERS WHERE EMAIL = ${decoded.email};`;
+                console.log('Resultado de búsqueda de usuario:', res);
 
-        if (res.length > 0) {
-            const user_id = res[0].ID;
+                if (res.length > 0) {
+                    const user_id = res[0].ID;
 
-            const files = await db.sql`SELECT f.* FROM FILES f JOIN ACCESS a ON f.ID = a.FILE WHERE a.USER = ${user_id};`;
-            console.log('Archivos del usuario:', files);
+                    const files = await db.sql`SELECT f.* FROM FILES f JOIN ACCESS a ON f.ID = a.FILE WHERE a.USER = ${user_id};`;
+                    console.log('Archivos del usuario:', files);
 
-            return files;
-        } else {
-            throw new Error('Usuario no encontrado');
-        }
-    } catch (error) {
-        console.error('Error en obtenerArchivosUsuario:', error);
-        throw error;
-    }
+                    resolve({status:200, files:files});
+                } else {
+                    throw new Error('Usuario no encontrado');
+                }
+            } catch (error) {
+                console.error('Error en obtenerArchivosUsuario:', error);
+                reject({status:500, message:error});
+            }
+        }  
+        obtener();
+    });
 }
 
+async function obtenerArchivo(token, file_id) {
+    return new Promise((resolve, reject) =>  { 
+        let obtener = async () => { 
+            try {
+                // Verifica el token
+                const decoded = jwt.verify(token, secret);
+                console.log('Token decodificado:', decoded);
 
+                const res = await db.sql`SELECT ID FROM USERS WHERE EMAIL = ${decoded.email};`;
+                console.log('Resultado de búsqueda de usuario:', res);
+
+                if (res.length > 0) {
+                    const user_id = res[0].ID;
+                    
+                    const file = await db.sql`SELECT f.* FROM FILES f JOIN ACCESS a ON f.ID = a.FILE WHERE a.USER = ${user_id} AND f.ID = ${file_id};`;
+                    console.log('Archivos del usuario:', file);
+
+                    resolve({status:200, file:file});
+                } else {
+                    throw new Error('Usuario no encontrado');
+                }
+            } catch (error) {
+                console.error('Error en obtenerArchivosUsuario:', error);
+                reject({status:500, message:error});
+            }
+        }  
+        obtener();
+    });
+}
 
 module.exports = {
+    obtenerArchivosUsuario,
     guardarClavesRSA,
+    obtenerArchivo,
     subirArchivo,
     obtenerArchivoyAES,
     obtenerArchivosUsuario
