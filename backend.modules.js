@@ -24,7 +24,25 @@ console.log('Base de datos conectada');
 // Modulo 1: Generar claves RSA
 // Generar claves RSA de manera aleatoria 
 // el modulo deberia devolver las dos claves en un objeto JSON
+function generarClavesRSA(contrasenya){
+    var { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
+        modulusLength: 2048,  // Tamaño del módulo (n) en bits
+        publicKeyEncoding: {
+            type: 'spki',     // Formato de la clave pública
+            format: 'pem'     // Codificación en formato PEM (Base64)
+        },
+        privateKeyEncoding: {
+            type: 'pkcs8',    // Formato de la clave privada
+            format: 'pem',    // Codificación en formato PEM (Base64)
+            cipher: 'aes-256-cbc', // (Opcional) Cifrado para proteger la clave privada
+            passphrase: contrasenya // Contraseña para proteger la clave privada (opcional)
+        }
+    });
 
+    //Devolver JSON
+    const claves={publica:publicKey, privada:privateKey};
+    return claves;
+}
 
 // Modulo 4: Almacenar claves RSA en el servidor
 // Almacenar las claves RSA publica y privada cifrada en el servidor

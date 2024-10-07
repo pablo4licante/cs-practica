@@ -108,6 +108,10 @@ export function cifrarArchivo() {
 // Modulo 8: Cifrar la clave AES con clave publica RSA
 // Cifrar la clave AES (Modulo 6) con la clave publica RSA del usuario (Modulo 1)
 // el modulo deberia devolver la clave AES cifrada
+function cifrarClavesAES(claveAES, clavePublica){
+  const AES_encriptada = crypto.publicEncrypt(clavePublica, claveAES);
+  return AES_encriptada;
+}
 
 //----------------------------------------------
 // MODULOS PARA DESCIFRADO DE ARCHIVOS
@@ -116,6 +120,10 @@ export function cifrarArchivo() {
 // Modulo 12: Descifrar clave AES con clave privada RSA
 // Descifrar la clave AES cifrada con la clave privada RSA descifrada (Modulo 10)
 // el modulo deberia devolver la clave AES descifrada
+function descifrarClaveAES(encriptadaAES, clavePrivada, contrasenya){
+  const AES_desencriptada = crypto.privateDecrypt({key: clavePrivada, passphrase: contrasenya}, encriptadaAES);
+  return AES_desencriptada;
+}
 
 // Modulo 13: Descifrar archivo
 // Descifrar el archivo con la clave AES descifrada (Modulo 12)
