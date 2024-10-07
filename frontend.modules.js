@@ -70,7 +70,7 @@ export function cifrarRSAPrivada(RSA_private_key, clave_AES) {
 // Generar claves AES de manera aleatoria para cifrar archivos posteriormente
 // el modulo deberia devolver una clave AES valida (en hexadecimal)
 
-export async function generar_Clave_AES_Random() {
+async function generar_Clave_AES_Random() {
   // Función que genera una clave AES aleatoria y la devuelve en formato hexadecimal
   const key = await crypto.subtle.generateKey(
     {
@@ -102,7 +102,7 @@ export async function generar_Clave_AES_Random() {
 // el modulo deberia devolver el archivo cifrado
 // MAXIMO
 
-export function cifrarArchivo(file, claveAES) {
+function cifrarArchivo(file, claveAES) {
    var aes = aesjs.AES(claveAES);
    var fileAsBytes = aesjs.utils.utf8.toBytes(file)
    var fileEncryptedAsBytes = aes.encrypt(fileAsBytes);
@@ -153,7 +153,7 @@ export function descifrarArchivo(fileEncryptedHex, claveAES) {
 // Entrada: nombre del archivo en la BD, datos del archivo descifrados
 // No debe retornar nada
 
-export function generarArchivo(nombre, fileAsBytes){
+function generarArchivo(nombre, fileAsBytes){
    // se debe convertir el archivo en bytes a Unit8Array para que funcione con File
    const fileAsArray = new Uint8Array(fileAsBytes); 
 
@@ -174,3 +174,16 @@ export function generarArchivo(nombre, fileAsBytes){
    // se elimina la URL temporal
    URL.revokeObjectURL(url);
 }
+
+
+
+module.exports = {
+    generarClaveAES,
+    cifrarRSAPrivada,
+    generar_Clave_AES_Random,
+    cifrarArchivo,
+    cifrarClavesAES,
+    descifrarClaveAES,
+    descifrarArchivo,
+    generarArchivo
+};
