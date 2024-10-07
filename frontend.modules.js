@@ -62,6 +62,21 @@ export function cifrarRSAPrivada(RSA_private_key, clave_AES) {
 // Modulo 10: Almacenar clave privada y JWT en local storage (LOGIN)
 // Almacenar la clave privada RSA descifrada y el JWT en local storage de manera temporal
 
+export function guardarDatos(RSA_private_key, token){
+  const ahora = new Date().getTime();
+  // 3 horas de tiempo de expiracion
+  // pasar minutos a milisegundos
+  const tiempo = ahora + 180 * 60000;    
+  const datos = {
+      RSA_private_key: RSA_private_key,
+      tokenJWT: token,
+      expiracion: tiempo
+  };
+    
+  // Guardar los datos como string en el localStorage
+  localStorage.setItem('authData', JSON.stringify(datos));
+}
+
 // ----------------------------------------------
 // MODULOS PARA CIFRADO DE ARCHIVOS
 // ----------------------------------------------
