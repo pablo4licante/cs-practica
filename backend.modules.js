@@ -161,7 +161,30 @@ async function subirArchivo(file_path, metadata, usuario, user_id, private_key) 
 // Obtener el archivo cifrado y la clave AES cifrada del servidor FTP
 // el modulo deberia devolver el archivo y la clave AES cifrada
 
- 
+async function obtenerArchivoyAES(token) {
+    try {
+        //decodificar el token jwt
+        const decoded = jwt.verify(token, secret);
+        console.log('Token decodificado:', decoded);
+        //buscar el id del usuario y guardarlo en variable
+        const res = await db.sql`SELECT ID FROM USERS WHERE EMAIL = ${decoded.email};`;
+        console.log('Resultado de búsqueda de usuario:', res);
+        
+        if(res.length > 0) {
+            const user_id = res[0].ID;
+
+            const file = await db.sql`SELECT f.URL, a.FILEKEY FROM FILES f JOIN ACCESS a ON f.ID = a.FILE WHERE a.USER = ${user_id};`;
+            console.log('Archivo del usuario:', file);
+
+            return file;
+        } else {
+            throw new Error('Usuario no encontrado');
+        }
+    } catch (error) {
+        console.error('Error en obtenerArchivosyAES:', error);
+        throw error;
+    }
+ }
 
 
 
@@ -170,7 +193,7 @@ async function subirArchivo(file_path, metadata, usuario, user_id, private_key) 
 // Hay que pasarle el token del usuario y y devuelve la informacion de todos los archivos
 // de ese usuario
 
-export async function obtenerArchivosUsuario(token) {
+async function obtenerArchivosUsuario(token) {
     
     try {
         // Verifica el token
@@ -183,7 +206,7 @@ export async function obtenerArchivosUsuario(token) {
         if (res.length > 0) {
             const user_id = res[0].ID;
 
-            const files = await db.sql`SELECT f.* FROM FILES f JOIN ACCESS a ON f.ID = a.FILE WHERE a.USER = ?;`([user_id]);
+            const files = await db.sql`SELECT f.* FROM FILES f JOIN ACCESS a ON f.ID = a.FILE WHERE a.USER = ${user_id};`;
             console.log('Archivos del usuario:', files);
 
             return files;
@@ -201,4 +224,6 @@ export async function obtenerArchivosUsuario(token) {
 module.exports = {
     guardarClavesRSA,
     subirArchivo,
+    obtenerArchivoyAES,
+    obtenerArchivosUsuario
 };

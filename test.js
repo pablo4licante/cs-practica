@@ -1,11 +1,4 @@
-import { generarClaveAES } from './frontend.modules.js';
+const { obtenerArchivoyAES } = require("./backend.modules.js");
 
-
-   console.log("Esta es la clave: " + generarClaveAES("EstaEsMiPassword"));
-
-import { generar_Clave_AES_Random } from "./frontend.modules.js";
-
-generar_Clave_AES_Random().then(clave_AES_Hex => {
-    console.log("Clave AES en hexadecimal:", clave_AES_Hex);
-  });
-
+var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InBhYmxvQGV4YW1wbGUuY29tIn0.SbtLZRgkXf1BcWF0NXkRiFOtrddSrggvTunGs20HKJc";
+obtenerArchivoyAES(token);
