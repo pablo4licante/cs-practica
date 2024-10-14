@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio de Sesi&oacute;n</title>
+    <script src="frontend.js"></script>
+</head>
+<body>
+    <div class="login-container">
+        <h2>Iniciar Sesi&oacute;n</h2>
+        <form onsubmit="login(event)">
+            <label for="email">Email: </label>
+            <input id="email" type="email" name="email" placeholder="Email" required>
+
+            <br><br>
+            
+            <label for="password">Contrase&ntilde;a:</label>
+            <input type="password" name="password" placeholder="Contrase&ntilde;a" required>
+            <button type="submit">Entrar</button>
+        </form>
+        <a href="/registration-form.html">¿No tienes una cuenta? Reg&iacute;strate.</a>
+    </div>
+</body>
+</html>
