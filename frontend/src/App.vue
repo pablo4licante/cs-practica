@@ -24,25 +24,25 @@
 
 <script>
 export default {
-  data() {
-    return {
-      email: '',
-      password: '',
-      password2: '', 
-    }
-  },
-  methods: {
-    submit() { 
+    
+    data() {
+        return {
+            email: '',
+            password: '',
+            password2: '', 
+        }
+    },
+    methods: {
+        async submit() { 
         if(!this.email || !this.password || !this.password2)
             return;
 
         // Comprobar si contraseñas coinciden
         if(this.password == this.password2)
         {
-            alert('Ejecutando función de registro!');
-            registro(this.email, this.password);
+            await registro(this.email, this.password);
         }else{
-            alert('Las contraseñas no son coincidentes');
+            alert('Las contraseñas no coinciden');
         }
     }
   }
