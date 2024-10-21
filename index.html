@@ -1,30 +1,13 @@
-<html>
-    <body>
-        <form method="post" enctype="multipart/form-data">
-            <input type="file" name="upload" /> 
-            <br>
-            <label for="fileKey">File Key:</label>
-            <input name="fileKey" />
-            <br>
-            <label for="token">Token:</label>
-            <input id="token" name="token"/>
-        </form>
-        <button onclick="onSubmit()">Test</button>
-    </body>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vite App</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
 </html>
-<script>
-    function onSubmit() {
-        var form = document.forms[0];
-        var data = new FormData(form);
-
-        var token = document.getElementById('token').value;
- 
-        const req = new XMLHttpRequest(); 
-        req.onload = (e) => {
-            console.log(req.responseText); 
-        };
-        req.open("POST", "http://localhost:3000/upload"); 
-        req.setRequestHeader('Authorization', token);    
-        req.send(data); 
-    }
-</script>
