@@ -161,7 +161,7 @@ async function subirArchivo(file_path, metadata, usuario, user_id, private_key) 
 // Obtener el archivo cifrado y la clave AES cifrada del servidor FTP
 // el modulo deberia devolver el archivo y la clave AES cifrada
 
-async function obtenerArchivoyAES(token) {
+async function obtenerArchivoyAES(token, file_id) {
     try {
         //decodificar el token jwt
         const decoded = jwt.verify(token, secret);
@@ -173,7 +173,7 @@ async function obtenerArchivoyAES(token) {
         if(res.length > 0) {
             const user_id = res[0].ID;
 
-            const file = await db.sql`SELECT f.URL, a.FILEKEY FROM FILES f JOIN ACCESS a ON f.ID = a.FILE WHERE a.USER = ${user_id};`;
+            const file = await db.sql`SELECT f.URL, a.FILEKEY FROM FILES f JOIN ACCESS a ON f.ID = a.FILE WHERE a.USER = ${user_id} AND f.ID = ${file_id};`;
             console.log('Archivo del usuario:', file);
 
             return file;
@@ -185,9 +185,6 @@ async function obtenerArchivoyAES(token) {
         throw error;
     }
  }
-
-
-
 
 // Modulo 12: Devolver la informacion de todos los archivos de un usuario.
 // Hay que pasarle el token del usuario y y devuelve la informacion de todos los archivos
