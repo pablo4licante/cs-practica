@@ -1,2 +1,2 @@
-./backend/node-modules
-./frontend/node-modules
+/backend/node-modules
+/frontend/node-modules
