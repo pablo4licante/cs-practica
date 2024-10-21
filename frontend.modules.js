@@ -5,7 +5,35 @@
  * En todo el documento AES se refiere a AES128.
  */
 
+//TODO CIFRAR LA CLAVE PRIVADA CON LA CLAVE AES y GUARDAR DE LA PASSWORD LA MITAD DEL HASH Y COMPROBAR LA MITAD DEL HASH
+
 import aesjs from 'aes-js';
+import crypto from 'crypto';
+import { guardarClavesRSA } from './backend.modules';
+
+// Modulo 1: Generar claves RSA
+// Generar claves RSA de manera aleatoria 
+// el modulo deberia devolver las dos claves en un objeto JSON
+function generarClavesRSA(contrasenya){
+  var { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
+      modulusLength: 2048,  // Tamaño del módulo (n) en bits
+      publicKeyEncoding: {
+          type: 'spki',     // Formato de la clave pública
+          format: 'pem'     // Codificación en formato PEM (Base64)
+      },
+      privateKeyEncoding: {
+          type: 'pkcs8',    // Formato de la clave privada
+          format: 'pem',    // Codificación en formato PEM (Base64)
+          cipher: 'aes-256-cbc', // (Opcional) Cifrado para proteger la clave privada
+          passphrase: contrasenya // Contraseña para proteger la clave privada (opcional)
+      }
+  });
+
+  //Devolver JSON
+  const claves={publica:publicKey, privada:privateKey};
+  return claves;
+}
+
 
 // ----------------------------------------------
 // MODULOS PARA GESTION DE USUARIOS
@@ -15,7 +43,6 @@ import aesjs from 'aes-js';
 // Generar clave AES en base a la password del usuario (TODO form registro/login)
 // Entrada: un string de 16 bytes
 // el modulo deberia devolver la clave AES 
-// MAXIMO
 
 export function generarClaveAES(pass) {
    //var pass = "EstaEsMiPassword" //se necesita un bloque de 16 bytes como este
@@ -52,12 +79,6 @@ export function cifrarRSAPrivada(RSA_private_key, clave_AES) {
   // devuelve clave RSA cifrada (en hexadecimal)
 }
 
-
-
-
-// Modulo 5: Pipeline de registro
-// Realizar el pipeline de registro de un usuario (Modulos 1, 2, 3 , 4, 10)
-// el modulo deberia devolver un mensaje de confirmacion
 
 // Modulo 10: Almacenar clave privada y JWT en local storage (LOGIN)
 // Almacenar la clave privada RSA descifrada y el JWT en local storage de manera temporal
@@ -115,7 +136,6 @@ async function generar_Clave_AES_Random() {
 // Cifrar un archivo con una clave AES (Modulo 6)
 // Entrada: un archivo en base 64 y la clave AES a utilizar
 // el modulo deberia devolver el archivo cifrado
-// MAXIMO
 
 function cifrarArchivo(file, claveAES) {
    var aes = aesjs.AES(claveAES);
@@ -149,7 +169,6 @@ function descifrarClaveAES(encriptadaAES, clavePrivada, contrasenya){
 // Descifrar el archivo con la clave AES descifrada (Modulo 12)
 // Entrada: el archivo cifrado en base64 y la claveAES en bytes
 // el modulo deberia devolver el archivo descifrado
-// MAXIMO
 
 export function descifrarArchivo(fileEncryptedHex, claveAES) {
    var aes = new aesjs.AES(claveAES);
@@ -191,6 +210,77 @@ function generarArchivo(nombre, fileAsBytes){
 }
 
 
+// ----------------------------------------------
+// PIPELINE REGISTRO
+// ----------------------------------------------
+
+// Modulo 5: Pipeline de registro
+// Realizar el pipeline de registro de un usuario (Modulos 1, 2, 3 , 4, 10)
+// el modulo deberia devolver un mensaje de confirmacion
+
+async function registro(email, password) {
+  if(checkUsuarioRegistrado(email) == false) {
+
+    // Generar un salt aleatorio
+    const salt = crypto.randomBytes(32).toString('hex');
+    // Concatenar el salt con la contraseña
+    const passwordConSalt = password + salt;
+
+    // Generar un hash de 256 bits de la contraseña
+    const hash = crypto.createHash('sha256').update(passwordConSalt).digest('hex'); // TODO: Mejorar a ARGON2
+    // Dividir el hash en dos partes
+    const hashMitad1 = hash.slice(0, hash.length / 2); //128bits
+    const hashMitad2 = hash.slice(hash.length / 2); // segunda mitad hasheada (lo que seria la contrasenya)
+
+    
+    // Generar claves RSA
+    const RSA_keys = await generarClavesRSA(); // TODO pasar a implementacion propia (?)
+    RSA_keys.privada = cifrarRSAPrivada(RSA_keys.privada, hashMitad1);
+    RSA_keys.publica;
+
+    // Enviar datos al endpoint /guardar-datos
+    await fetch('/guardar-datos', {
+      method: 'POST',
+      headers: {
+      'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+      email,
+      public_key: RSA_keys.publica,
+      private_key: RSA_keys.privada,
+      password: hashMitad2,
+      salt
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Datos guardados:', data);
+    })
+    .catch(error => {
+      console.error('Error al guardar los datos:', error);
+    });
+
+
+  }
+}
+
+
+async function checkUsuarioRegistrado(email) {
+  await fetch("/obtener-usuario?email=" + email).then(response => {
+    if (response.status === 200) {
+      if(response.found == true) {
+        console.log("Error: El usuario ya existe.");
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }).catch(error => {
+    console.error("Error: " + error);
+  });
+}
+
+
 
 module.exports = {
     generarClaveAES,
@@ -200,5 +290,8 @@ module.exports = {
     cifrarClavesAES,
     descifrarClaveAES,
     descifrarArchivo,
-    generarArchivo
+    generarArchivo,
+    guardarDatos,
+    checkUsuarioRegistrado,
+    registro
 };

@@ -21,29 +21,6 @@ console.log('Base de datos conectada');
 // MODULOS PARA GESTION DE USUARIOS
 // ----------------------------------------------
 
-// Modulo 1: Generar claves RSA
-// Generar claves RSA de manera aleatoria 
-// el modulo deberia devolver las dos claves en un objeto JSON
-function generarClavesRSA(contrasenya){
-    var { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
-        modulusLength: 2048,  // Tamaño del módulo (n) en bits
-        publicKeyEncoding: {
-            type: 'spki',     // Formato de la clave pública
-            format: 'pem'     // Codificación en formato PEM (Base64)
-        },
-        privateKeyEncoding: {
-            type: 'pkcs8',    // Formato de la clave privada
-            format: 'pem',    // Codificación en formato PEM (Base64)
-            cipher: 'aes-256-cbc', // (Opcional) Cifrado para proteger la clave privada
-            passphrase: contrasenya // Contraseña para proteger la clave privada (opcional)
-        }
-    });
-
-    //Devolver JSON
-    const claves={publica:publicKey, privada:privateKey};
-    return claves;
-}
-
 // Modulo 4: Almacenar claves RSA en el servidor
 // Almacenar las claves RSA publica y privada cifrada en el servidor
 // el modulo deberia devolver un mensaje de confirmacion
@@ -271,11 +248,55 @@ async function obtenerArchivo(token, file_id) {
     });
 }
 
+async function emailExiste(email) {
+    return new Promise((resolve, reject) => {
+    
+    try {
+        const res = db.sql`SELECT COUNT(*) as count FROM USERS WHERE EMAIL = ${email};`;
+        resolve({status:200, found:res[0].count > 0});
+    } catch (error) {
+        console.error('Error en emailExiste:', error);
+        reject({status:500, message:error});
+    }
+});
+}
+async function guardarUsuario(email, password, salt) {
+    try {
+        // Verifica si el usuario ya existe
+        const res = await db.sql`SELECT COUNT(*) as count FROM USERS WHERE EMAIL = ${email};`;
+        if (res[0].count > 0) {
+            throw new Error('El usuario ya existe');
+        }
+
+        // Inserta el nuevo usuario en la base de datos
+        const insertResult = await db.sql`INSERT INTO USERS (EMAIL, PASSWORD, SALT) VALUES (${email}, ${password}, ${salt});`;
+        console.log('Resultado de la inserción:', insertResult);
+
+        return { status: 200, message: 'Usuario guardado con éxito' };
+    } catch (error) {
+        console.error('Error en guardarUsuario:', error);
+        throw error;
+    }
+}
+
+async function getUser(email) {
+    try {
+        const res = await db.sql`SELECT COUNT(*) as count FROM USERS WHERE EMAIL = ${email};`;
+        return { exists: res[0].count > 0 };
+    } catch (error) {
+        console.error('Error en getUser:', error);
+        throw error;
+    }
+}
+
 module.exports = {
     obtenerArchivosUsuario,
     guardarClavesRSA,
     obtenerArchivo,
     subirArchivo,
     obtenerArchivoyAES,
-    obtenerArchivosUsuario
+    obtenerArchivosUsuario,
+    emailExiste,
+    guardarUsuario,
+    getUser
 };
