@@ -4,6 +4,8 @@ const { obtenerArchivosUsuario } = require('./backend.modules.js');
 const { guardarClavesRSA } = require('./backend.modules.js');
 const { guardarUsuario } = require('./backend.modules.js');
 const { getUser } = require('./backend.modules.js');
+const { subirArchivo } = require('./backend.modules.js');
+const multer = require('multer');
 
 const app = express();
 const port = 3000;
@@ -55,6 +57,39 @@ app.get('/obtener-usuario', async (req, res) => {
     }
 });
 
+app.get('/obtener-clave-publica', async (req, res) => {
+    const token = req.query.token;
+    if (!token) {
+        return res.status(400).json({ error: 'Token is required' });
+    }
+
+    try {
+        const result = await obtenerClavePublica(token);
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch public key' });
+    }
+});
+
+const upload = multer({ dest: './tmp/' });
+
+app.post('/subir-archivo', upload.single('upload'), express.json(), async (req, res) => {
+    const { metadata, token, AES_key } = req.body;
+
+    if (!req.file || !metadata || !token || !AES_key) {
+        return res.status(400).json({ error: 'file, metadata, token, and AES_key are required' });
+    }
+
+    try {
+        const file_path = req.file.path;
+        const result = await subirArchivo(file_path, metadata, token, AES_key);
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to upload file' });
+    }
+});
+
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
+

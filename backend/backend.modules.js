@@ -69,18 +69,30 @@ function eliminarArchivoLocal(file_path) {
     });
 }
  
-async function subirArchivo(file_path, metadata, usuario, user_id, private_key) {
+async function subirArchivo(file_path, metadata, token, AES_key) {
     if(!private_key) { 
         // Eliminar archivo temporal    
         eliminarArchivoLocal(file_path); 
         return {status:400, message:'Error al subir el archivo, clave privada no especificada'};
     } 
+
+    // Decodificar el token jwt
+    const decoded = jwt.verify(token, secret);
+    console.log('Token decodificado:', decoded);
+    const email = decoded.email;
+    const res = await db.sql`SELECT ID FROM USERS WHERE EMAIL = ${email};`;
+    console.log('Resultado de búsqueda de usuario:', res);
+    var user_id = null;
+    if(res.length > 0) {
+        user_id = res[0].ID;
+    }
+
     return new Promise((resolve, reject) => {
         var c = new ftp();
         c.on("error", function (e) {     
             // Eliminar archivo temporal    
             eliminarArchivoLocal(file_path);   
-            console.log(`${e} al subir el archivo: ${file_path} subido por ${usuario}(${user_id}) con clave ${private_key}`);
+            console.log(`${e} al subir el archivo: ${file_path} subido por ${email}(${user_id}) con clave ${private_key}`);
             reject({status:500, message:`Error al subir el archivo: ${e}`});
         });   
         c.on("ready", async function () {   
@@ -88,25 +100,25 @@ async function subirArchivo(file_path, metadata, usuario, user_id, private_key) 
                 c.list(ruta_ftp, async function (err, list) { 
                     if (err) throw err; 
 
-                    // Comprobar si la carpeta para usuario existe
+                    // Comprobar si la carpeta para email usuario existe
                     let carpetaExiste = false;
                     for (let i = 0; i < list.length; i++) {
-                        if(list[i].name == usuario) { 
+                        if(list[i].name == email) { 
                             carpetaExiste = true;
                             break;
                         }
                     }  
                     // Crear nueva carpeta si es necesario
                     if(!carpetaExiste) { 
-                        await c.mkdir(`${ruta_ftp}/${usuario}`, true, async function (err) {
+                        await c.mkdir(`${ruta_ftp}/${email}`, true, async function (err) {
                             if (err) throw err; 
-                            console.log(`Carpeta creada para usuario: ${usuario}`);
+                            console.log(`Carpeta creada para usuario: ${email}`);
                         });
                     } 
  
                     // Nombre y ruta del archivo
                     let file_name = `file${moment().valueOf()}`; 
-                    let path = `${usuario}/${file_name}`;
+                    let path = `${email}/${file_name}`;
                      
                     // Almacenar archivo en db
                     let result = await db.sql`USE DATABASE cs; 
@@ -114,19 +126,19 @@ async function subirArchivo(file_path, metadata, usuario, user_id, private_key) 
                     VALUES (${path}, ${JSON.stringify(metadata)})`;
                     
                     // ID generada por la base de datos
-                    let file_id = result.lastID; 
+                    let file_id = result.lastID;
                   
                     // Crear relacion entre archivo y usuario en db
                     await db.sql`USE DATABASE cs; 
                     INSERT INTO ACCESS (FILE, USER, FILEKEY) 
-                    VALUES (${file_id}, ${user_id}, "${private_key}")`;
+                    VALUES (${file_id}, ${user_id}, "${AES_key}")`;
   
                     // Almacenar archivo en la carpeta del usuario con ftp
                     const destino = `${ruta_ftp}/${path}`;  
                     await c.put(file_path, destino, async function (err) { 
                         if (err) throw err;
 
-                        console.log(`Archivo ${file_path} subido por ${usuario}(${user_id}) con clave ${private_key}`);
+                        console.log(`Archivo ${file_path} subido por ${email}(${user_id}) con clave ${AES_key}`);
                        
                         // Eliminar archivo temporal    
                         eliminarArchivoLocal(file_path); 
@@ -140,7 +152,7 @@ async function subirArchivo(file_path, metadata, usuario, user_id, private_key) 
             }catch (e) {   
                 // Eliminar archivo temporal    
                 eliminarArchivoLocal(file_path); 
-                console.log(`${e} al subir el archivo: ${file_path} subido por ${usuario}(${user_id}) con clave ${private_key}`);
+                console.log(`${e} al subir el archivo: ${file_path} subido por ${email}(${user_id}) con clave ${AES_key}`);
                 reject({status:500, message:`Error al subir el archivo: ${e}`});
             }
         });  
@@ -213,6 +225,20 @@ async function obtenerArchivosUsuario(token) {
         }  
         obtener();
     });
+}
+
+async function obtenerClavePublica(token) {
+    try {
+        // Decodificar el token jwt
+        const decoded = jwt.verify(token, secret);
+        console.log('Token decodificado:', decoded);
+
+        const res = await db.sql`SELECT k.PUBLIC_KEY FROM KEYS k JOIN USERS u ON k.USER_ID = u.ID WHERE u.EMAIL = ${decoded.email};`;
+        return { status: 200, public_key: res[0].PUBLIC_KEY };
+    } catch (error) {
+        console.error('Error en obtenerClavePublica:', error);
+        throw error;
+    }
 }
 
 async function obtenerArchivo(token, file_id) {

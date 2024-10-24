@@ -2,6 +2,8 @@ import aesjs from 'aes-js';
 
 const api = 'http://localhost:3000';
 
+const mytoken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InBhYmxvQGV4YW1wbGUuY29tIn0.SbtLZRgkXf1BcWF0NXkRiFOtrddSrggvTunGs20HKJc";
+
 // Modulo 1: Generar claves RSA
 // Generar claves RSA de manera aleatoria usando Web Crypto API
 async function generarClavesRSA(contrasenya) {
@@ -92,6 +94,15 @@ function guardarDatos(RSA_private_key, token) {
   localStorage.setItem('authData', JSON.stringify(datos));
 }
 
+// Cifrar la clave AES con la clave publica RSA del usuario 
+async function cifrarClaveAES(claveAES, RSA_public_key) {
+  var claveAES_Bytes = aesjs.utils.utf8.toBytes(claveAES);
+  var aesCtr = new aesjs.ModeOfOperation.ctr(claveAES_Bytes, new aesjs.Counter(5));
+  var claveAES_Bytes_Encrypted = aesCtr.encrypt(RSA_public_key);
+  var claveAES_Hex_Encrypted = aesjs.utils.hex.fromBytes(claveAES_Bytes_Encrypted);
+  return claveAES_Hex_Encrypted;
+}
+
 // Pipeline de registro
 async function registro(email, password) {
   console.log("Registrando usuario...");
@@ -143,6 +154,51 @@ async function checkUsuarioRegistrado(email) {
   }
 }
 
+// Obtener clave publica del usuario logueaado
+async function obtenerClavePublica(token) {
+  try {
+    const response = await fetch(api + "/obtener-clave-publica?token=" + token);
+    if (response.status === 200) {
+      const data = await response.json();
+      return data.public_key;
+    } else {
+      console.error("Error: No se pudo obtener la clave publica.");
+      return false;
+    }
+  } catch (error) {
+    console.error("Error: " + error);
+    return false;
+  }
+}
+
+async function subirArchivo() {
+  let clave_AES = await generar_Clave_AES_Random();
+  let RSA_public_key = await obtenerClavePublica(mytoken);
+  let clave_AES_Encriptada = await cifrarClaveAES(clave_AES, RSA_public_key);
+  let file = document.getElementById('file').files[0];
+  let file_encriptado = await cifrarArchivo(file, clave_AES);
+  let metadata = {
+    nombre: file.name,
+    tipo: file.type,
+    tamano: file.size,
+  };
+  let usuario = token; // TODO Cambiar por el token del usuario de verdad
+  
+  await fetch(api + '/subir-archivo', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      file_path: file_encriptado,
+      metadata: metadata,
+      token: usuario,
+      AES_key: clave_AES_Encriptada
+    })
+  })
+  .then(response => response.json())
+  .then(data => console.log('Archivo subido:', data))
+  .catch(error => console.error('Error al subir el archivo:', error));
+}
+
 export { 
   generarClaveAES,
   cifrarRSAPrivada,
@@ -150,5 +206,7 @@ export {
   cifrarArchivo,
   guardarDatos,
   registro,
-  checkUsuarioRegistrado
+  checkUsuarioRegistrado,
+  obtenerClavePublica,
+  subirArchivo
 };
