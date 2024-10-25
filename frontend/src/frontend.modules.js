@@ -171,28 +171,26 @@ async function obtenerClavePublica(token) {
   }
 }
 
-async function subirArchivo() {
+async function subirArchivo(file, data) {
   let clave_AES = await generar_Clave_AES_Random();
   let RSA_public_key = await obtenerClavePublica(mytoken);
-  let clave_AES_Encriptada = await cifrarClaveAES(clave_AES, RSA_public_key);
-  let file = document.getElementById('file').files[0];
   let file_encriptado = await cifrarArchivo(file, clave_AES);
+  let clave_AES_Encriptada = await cifrarClaveAES(clave_AES, RSA_public_key);
   let metadata = {
-    nombre: file.name,
-    tipo: file.type,
-    tamano: file.size,
+    'name': data.get('upload').name,
+    'size': data.get('upload').size,
+    'lastModified': data.get('upload').lastModified
   };
-  let usuario = token; // TODO Cambiar por el token del usuario de verdad
   
   await fetch(api + '/subir-archivo', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: ('Authorization', mytoken ),
     body: JSON.stringify({
       file_path: file_encriptado,
       metadata: metadata,
       token: usuario,
       AES_key: clave_AES_Encriptada
-    })
+    }) 
   })
   .then(response => response.json())
   .then(data => console.log('Archivo subido:', data))

@@ -21,13 +21,14 @@ export default {
         onSubmit() {
                 var form = document.forms[0];
                 var data = new FormData(form);
-                console.log(data);
-                for (var pair of data.entries()) {
-                    console.log(pair[0] + ': ' + pair[1].name);
-                    console.log(pair[0] + ': ' + pair[1].size);
-                    console.log(pair[0] + ': ' + pair[1].lastModified);
-                }
-            //subirArchivo(data);
+
+            var fileInput = form.querySelector('input[type="file"]');
+            if (fileInput.files.length > 0) {
+                let file = fileInput.files[0];
+                //subirArchivo(file, data);
+            } else {
+                console.log('No file selected');
+            }
         }
     }
 };

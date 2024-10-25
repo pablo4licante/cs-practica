@@ -74,7 +74,7 @@ app.get('/obtener-clave-publica', async (req, res) => {
 const upload = multer({ dest: './tmp/' });
 
 app.post('/subir-archivo', upload.single('upload'), express.json(), async (req, res) => {
-    const { metadata, token, AES_key } = req.body;
+    const { file_path, metadata, token, AES_key } = req.body;
 
     if (!req.file || !metadata || !token || !AES_key) {
         return res.status(400).json({ error: 'file, metadata, token, and AES_key are required' });
