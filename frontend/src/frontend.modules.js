@@ -2,7 +2,7 @@ import aesjs from 'aes-js';
 
 const api = 'http://localhost:3000';
 
-const mytoken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InBhYmxvQGV4YW1wbGUuY29tIn0.SbtLZRgkXf1BcWF0NXkRiFOtrddSrggvTunGs20HKJc";
+const mytoken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySUQiOjEsInVzZXIiOiJwYWJsbyIsImVtYWlsIjoicGFibG9AZXhhbXBsZS5jb20iLCJpYXQiOjE3Mjk5MDc5NzcsImV4cCI6MTcyOTkxMTU3N30.iacG8apqNDPJdScRLnh8vU17oT7E3FHi2YInS0n6vgs";
 
 // Modulo 1: Generar claves RSA
 // Generar claves RSA de manera aleatoria usando Web Crypto API
@@ -63,7 +63,7 @@ async function generar_Clave_AES_Random() {
   );
 
   const clave_AES_Bytes = await crypto.subtle.exportKey("raw", key);
-  const clave_AES_Array = new Uint8Array(clave_AES_Bytes);
+  const clave_AES_Array = Array.from(new Uint8Array(clave_AES_Bytes));
 
   const clave_AES_Hex = Array.from(clave_AES_Array)
     .map(byte => byte.toString(16).padStart(2, '0'))
@@ -75,11 +75,11 @@ async function generar_Clave_AES_Random() {
 
 // Modulo 7: Cifrar archivo con AES
 function cifrarArchivo(file, claveAES) {
-  var aes = new aesjs.AES(claveAES);
-  var fileAsBytes = aesjs.utils.utf8.toBytes(file);
-  var fileEncryptedAsBytes = aes.encrypt(fileAsBytes);
-  var fileEncryptedHex = aesjs.utils.hex.fromBytes(fileEncryptedAsBytes);
-  return fileEncryptedHex;
+  var claveAES_Bytes = aesjs.utils.utf8.toBytes(claveAES);
+  var aesCtr = new aesjs.ModeOfOperation.ctr(claveAES_Bytes, new aesjs.Counter(5)); 
+  const fileBytes = aesjs.utils.utf8.toBytes(file); 
+  var fileEncryptedAsBytes = aesCtr.encrypt( fileBytes ); 
+  return fileEncryptedAsBytes;
 }
 
 // Modulo 10: Guardar clave privada y JWT en localStorage
@@ -98,9 +98,8 @@ function guardarDatos(RSA_private_key, token) {
 async function cifrarClaveAES(claveAES, RSA_public_key) {
   var claveAES_Bytes = aesjs.utils.utf8.toBytes(claveAES);
   var aesCtr = new aesjs.ModeOfOperation.ctr(claveAES_Bytes, new aesjs.Counter(5));
-  var claveAES_Bytes_Encrypted = aesCtr.encrypt(RSA_public_key);
-  var claveAES_Hex_Encrypted = aesjs.utils.hex.fromBytes(claveAES_Bytes_Encrypted);
-  return claveAES_Hex_Encrypted;
+  var claveRSA_Bytes = aesjs.utils.utf8.toBytes(RSA_public_key); 
+  return aesjs.utils.hex.fromBytes(aesCtr.encrypt(claveRSA_Bytes));
 }
 
 // Pipeline de registro
@@ -171,26 +170,29 @@ async function obtenerClavePublica(token) {
   }
 }
 
-async function subirArchivo(file, data) {
+async function subirArchivo(formData, archivoPlano) {
+  const archivoSubido = formData.get("upload");
+ 
   let clave_AES = await generar_Clave_AES_Random();
-  let RSA_public_key = await obtenerClavePublica(mytoken);
-  let file_encriptado = await cifrarArchivo(file, clave_AES);
-  let clave_AES_Encriptada = await cifrarClaveAES(clave_AES, RSA_public_key);
-  let metadata = {
-    'name': data.get('upload').name,
-    'size': data.get('upload').size,
-    'lastModified': data.get('upload').lastModified
-  };
+  let RSA_public_key = await obtenerClavePublica(mytoken); 
+  let archivoCifrado = await cifrarArchivo(archivoPlano, clave_AES);
+  let clave_AES_cifrada = await cifrarClaveAES(clave_AES, RSA_public_key);
+ 
+  console.log("creando archivo cifrado");
+  let archivo = new Blob([new Uint8Array(archivoCifrado)], { 
+    type: archivoSubido.type, 
+    name: archivoSubido.name, 
+    lastModified: archivoSubido.lastModified
+  });
+
+  formData.set("upload", archivo);
+  formData.set("claveAES", clave_AES_cifrada);
   
+  console.log("subiendo...");
   await fetch(api + '/subir-archivo', {
     method: 'POST',
-    headers: ('Authorization', mytoken ),
-    body: JSON.stringify({
-      file_path: file_encriptado,
-      metadata: metadata,
-      token: usuario,
-      AES_key: clave_AES_Encriptada
-    }) 
+    headers: {'Authorization': mytoken },
+    body: formData
   })
   .then(response => response.json())
   .then(data => console.log('Archivo subido:', data))

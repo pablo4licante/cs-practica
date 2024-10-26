@@ -19,13 +19,24 @@ export default {
     
     methods: {
         onSubmit() {
-                var form = document.forms[0];
-                var data = new FormData(form);
-
-            var fileInput = form.querySelector('input[type="file"]');
-            if (fileInput.files.length > 0) {
-                let file = fileInput.files[0];
-                //subirArchivo(file, data);
+            var form = document.forms[0];
+            var data = new FormData(form);
+ 
+            for (const key of data.keys()) {
+                console.log(data.get(key));
+            }
+ 
+            var reader = new FileReader(); 
+            reader.onload = function(e)
+            { 
+                console.log("archivo leido!"); 
+ 
+                subirArchivo(data, reader.result);
+            };
+ 
+            if (data.has("upload") && data.get("upload")) { 
+                console.log("leyendo archivo.."); 
+                reader.readAsArrayBuffer(data.get("upload")); 
             } else {
                 console.log('No file selected');
             }

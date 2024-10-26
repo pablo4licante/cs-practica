@@ -11,8 +11,31 @@ const ftp = require('ftp');
 const moment = require('moment');
 
 // TODO ESCONDER TOKEN SECRET
-const secret = 'secret';
+const jwt_secret = 'secret';
 const jwt = require('jsonwebtoken')
+
+const generarToken = (payload) => { 
+    const opciones = {
+        expiresIn: '1h',  
+    }; 
+    return jwt.sign(payload, jwt_secret, opciones);
+};  
+
+const validarToken = (req, res, next) => { 
+    jwt.verify(req.headers.authorization, jwt_secret, (err, payload) => {
+        if (err) {
+            return res.status(403).json({
+                success: false,
+                message: 'Token inválido',
+            });
+        } else {
+            req.userID = payload.userID;
+            req.user = payload.user;
+            req.email = payload.email;
+            next();
+        }
+    });
+} 
 
 const db = new Database('sqlitecloud://cjajv32esz.sqlite.cloud:8860/cs?apikey=pqXdLE9WN4KJaubEtPay1bpQJ4z6AkqNCBQuyu4Y8qc');
 console.log('Base de datos conectada');
@@ -69,30 +92,18 @@ function eliminarArchivoLocal(file_path) {
     });
 }
  
-async function subirArchivo(file_path, metadata, token, AES_key) {
-    if(!private_key) { 
+async function subirArchivo(file_path, metadata, user_id, user_email, AES_key) {
+    if(!AES_key) {  
         // Eliminar archivo temporal    
-        eliminarArchivoLocal(file_path); 
+        eliminarArchivoLocal(file_path);  
         return {status:400, message:'Error al subir el archivo, clave privada no especificada'};
     } 
-
-    // Decodificar el token jwt
-    const decoded = jwt.verify(token, secret);
-    console.log('Token decodificado:', decoded);
-    const email = decoded.email;
-    const res = await db.sql`SELECT ID FROM USERS WHERE EMAIL = ${email};`;
-    console.log('Resultado de búsqueda de usuario:', res);
-    var user_id = null;
-    if(res.length > 0) {
-        user_id = res[0].ID;
-    }
-
     return new Promise((resolve, reject) => {
         var c = new ftp();
         c.on("error", function (e) {     
             // Eliminar archivo temporal    
             eliminarArchivoLocal(file_path);   
-            console.log(`${e} al subir el archivo: ${file_path} subido por ${email}(${user_id}) con clave ${private_key}`);
+            console.log(`${e} al subir el archivo: ${file_path} subido por ${user_email}(${user_id}) con clave ${AES_key}`);
             reject({status:500, message:`Error al subir el archivo: ${e}`});
         });   
         c.on("ready", async function () {   
@@ -100,25 +111,25 @@ async function subirArchivo(file_path, metadata, token, AES_key) {
                 c.list(ruta_ftp, async function (err, list) { 
                     if (err) throw err; 
 
-                    // Comprobar si la carpeta para email usuario existe
+                    // Comprobar si la carpeta para la id de usuario existe
                     let carpetaExiste = false;
                     for (let i = 0; i < list.length; i++) {
-                        if(list[i].name == email) { 
+                        if(list[i].name == user_id) { 
                             carpetaExiste = true;
                             break;
                         }
                     }  
                     // Crear nueva carpeta si es necesario
                     if(!carpetaExiste) { 
-                        await c.mkdir(`${ruta_ftp}/${email}`, true, async function (err) {
+                        await c.mkdir(`${ruta_ftp}/${user_id}`, true, async function (err) {
                             if (err) throw err; 
-                            console.log(`Carpeta creada para usuario: ${email}`);
+                            console.log(`Carpeta creada para usuario: ${user_id}`);
                         });
                     } 
  
                     // Nombre y ruta del archivo
                     let file_name = `file${moment().valueOf()}`; 
-                    let path = `${email}/${file_name}`;
+                    let path = `${user_id}/${file_name}`;
                      
                     // Almacenar archivo en db
                     let result = await db.sql`USE DATABASE cs; 
@@ -138,7 +149,7 @@ async function subirArchivo(file_path, metadata, token, AES_key) {
                     await c.put(file_path, destino, async function (err) { 
                         if (err) throw err;
 
-                        console.log(`Archivo ${file_path} subido por ${email}(${user_id}) con clave ${AES_key}`);
+                        console.log(`Archivo ${file_path} subido por ${user_email}(${user_id}) con clave ${AES_key}`);
                        
                         // Eliminar archivo temporal    
                         eliminarArchivoLocal(file_path); 
@@ -152,7 +163,8 @@ async function subirArchivo(file_path, metadata, token, AES_key) {
             }catch (e) {   
                 // Eliminar archivo temporal    
                 eliminarArchivoLocal(file_path); 
-                console.log(`${e} al subir el archivo: ${file_path} subido por ${email}(${user_id}) con clave ${AES_key}`);
+
+                console.log(`${e} al subir el archivo: ${file_path} subido por ${user_email}(${user_id}) con clave ${AES_key}`);
                 reject({status:500, message:`Error al subir el archivo: ${e}`});
             }
         });  
@@ -171,7 +183,7 @@ async function subirArchivo(file_path, metadata, token, AES_key) {
 async function obtenerArchivoyAES(token, file_id) {
     try {
         //decodificar el token jwt
-        const decoded = jwt.verify(token, secret);
+        const decoded = jwt.verify(token, jwt_secret);
         console.log('Token decodificado:', decoded);
         //buscar el id del usuario y guardarlo en variable
         const res = await db.sql`SELECT ID FROM USERS WHERE EMAIL = ${decoded.email};`;
@@ -202,7 +214,7 @@ async function obtenerArchivosUsuario(token) {
         let obtener = async () => { 
             try {
                 // Verifica el token
-                const decoded = jwt.verify(token, secret);
+                const decoded = jwt.verify(token, jwt_secret);
                 console.log('Token decodificado:', decoded);
 
                 const res = await db.sql`SELECT ID FROM USERS WHERE EMAIL = ${decoded.email};`;
@@ -230,7 +242,7 @@ async function obtenerArchivosUsuario(token) {
 async function obtenerClavePublica(token) {
     try {
         // Decodificar el token jwt
-        const decoded = jwt.verify(token, secret);
+        const decoded = jwt.verify(token, jwt_secret);
         console.log('Token decodificado:', decoded);
 
         const res = await db.sql`SELECT k.PUBLIC_KEY FROM KEYS k JOIN USERS u ON k.USER_ID = u.ID WHERE u.EMAIL = ${decoded.email};`;
@@ -246,7 +258,7 @@ async function obtenerArchivo(token, file_id) {
         let obtener = async () => { 
             try {
                 // Verifica el token
-                const decoded = jwt.verify(token, secret);
+                const decoded = jwt.verify(token, jwt_secret);
                 console.log('Token decodificado:', decoded);
 
                 const res = await db.sql`SELECT ID FROM USERS WHERE EMAIL = ${decoded.email};`;
@@ -313,6 +325,7 @@ async function getUser(email) {
 }
 
 module.exports = {
+    obtenerClavePublica,
     obtenerArchivosUsuario,
     guardarClavesRSA,
     obtenerArchivo,
@@ -321,5 +334,7 @@ module.exports = {
     obtenerArchivosUsuario,
     emailExiste,
     guardarUsuario,
-    getUser
+    getUser,
+    generarToken,
+    validarToken
 };
