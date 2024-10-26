@@ -1,8 +1,0 @@
-{
-    "files.associations": {
-        "*.embeddedhtml": "html",
-        "*.php": "php",
-        "*.md": "markdown",
-        "stdlib.h": "c"
-    }
-}

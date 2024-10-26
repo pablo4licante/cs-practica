@@ -1,16 +1,24 @@
 const express = require('express');
-const cors = require('cors');
-const { obtenerArchivosUsuario } = require('./backend.modules.js');
+const cors = require('cors'); 
 const { guardarClavesRSA } = require('./backend.modules.js');
 const { guardarUsuario } = require('./backend.modules.js');
 const { getUser } = require('./backend.modules.js');
-const { subirArchivo } = require('./backend.modules.js');
-const multer = require('multer');
+const { obtenerClavePublica, obtenerArchivosUsuario, 
+        subirArchivo, generarToken, validarToken } = require('./backend.modules.js');
 
 const app = express();
 const port = 3000;
 
 app.use(cors());
+
+app.get('/token', (req, res) => {  
+    let newToken = generarToken({
+        userID: 1,
+        user: 'pablo', 
+        email: 'pablo@example.com',
+    });
+    res.status(200).json({ token: newToken });
+});   
 
 app.get('/obtener-archivos', async (req, res) => {
     const token = req.query.token;
@@ -67,28 +75,39 @@ app.get('/obtener-clave-publica', async (req, res) => {
         const result = await obtenerClavePublica(token);
         res.json(result);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch public key' });
+        res.status(500).json({msg: 'Error? '+error});
     }
 });
-
-const upload = multer({ dest: './tmp/' });
-
-app.post('/subir-archivo', upload.single('upload'), express.json(), async (req, res) => {
-    const { file_path, metadata, token, AES_key } = req.body;
-
-    if (!req.file || !metadata || !token || !AES_key) {
-        return res.status(400).json({ error: 'file, metadata, token, and AES_key are required' });
+ 
+const multer = require("multer");
+const upload = multer({dest:'./tmp/'});
+app.post("/subir-archivo", validarToken, upload.single('upload'), async (req, res) => { 
+    if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
     }
 
-    try {
-        const file_path = req.file.path;
-        const result = await subirArchivo(file_path, metadata, token, AES_key);
-        res.json(result);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to upload file' });
-    }
+    let metadata = {
+        filename: req.file.originalname,
+        size: req.file.size,
+        mimetype: req.file.mimetype,
+        date: new Date(),
+    };
+
+    console.log("received file with " + JSON.stringify(metadata));
+ 
+    await subirArchivo(`./${req.file.path}`, metadata, req.userID, req.email, req.body.claveAES).then((resp) => {
+        console.log('status: ' + resp.status);
+        res.status(resp.status).json(
+            resp
+        );
+    }).catch((err) => {
+        console.log('er status: ' + JSON.stringify(err));
+        res.status(500).json(
+            err
+        );
+    }); 
 });
-
+ 
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
