@@ -104,36 +104,48 @@ async function cifrarClaveAES(claveAES, RSA_public_key) {
 
 // Pipeline de registro
 async function registro(email, password) {
-  console.log("Registrando usuario...");
-  if (await checkUsuarioRegistrado(email) == false) {
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    const passwordConSalt = password + btoa(String.fromCharCode(...salt));
-    const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(passwordConSalt));
-    const hashHex = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-
-    const hashMitad1 = hashHex.slice(0, hashHex.length / 2);
-    const hashMitad2 = hashHex.slice(hashHex.length / 2);
-
-    const RSA_keys = await generarClavesRSA(password);
-    const privateKeyEncrypted = cifrarRSAPrivada(RSA_keys.privada, aesjs.utils.utf8.toBytes(hashMitad1));
-
-    await fetch(api + '/guardar-datos', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email,
-        public_key: RSA_keys.publica,
-        private_key: privateKeyEncrypted,
-        password: hashMitad2,
-        salt: btoa(String.fromCharCode(...salt))
-      })
-    })
-    .then(response => response.json())
-    .then(data => console.log('Datos guardados:', data))
-    .catch(error => console.error('Error al guardar los datos:', error));
-  } else {
-    console.log("Error: El usuario ya existe.");
-  }
+  console.log("Registrando usuario..."); 
+  return new Promise((resolve, reject) =>  { 
+    checkUsuarioRegistrado(email).then(existe => {
+        if(existe) {
+            throw 'Usuario ya registrado';
+        } 
+        const salt = crypto.getRandomValues(new Uint8Array(16));
+        const passwordConSalt = password + btoa(String.fromCharCode(...salt));
+        const passwordBytes = new TextEncoder().encode(passwordConSalt);
+        
+        crypto.subtle.digest('SHA-256', passwordBytes).then(hash => { 
+          const hashHex = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+          const hashMitad1 = hashHex.slice(0, hashHex.length / 2);
+          const hashMitad2 = hashHex.slice(hashHex.length / 2);
+    
+          generarClavesRSA(password).then(RSA_keys => {  
+            const privateKeyEncrypted = cifrarRSAPrivada(RSA_keys.privada, aesjs.utils.utf8.toBytes(hashMitad1));
+      
+            fetch(api + '/guardar-datos', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email,
+                public_key: RSA_keys.publica,
+                private_key: privateKeyEncrypted,
+                password: hashMitad2,
+                salt: btoa(String.fromCharCode(...salt))
+              })
+            })
+            .then(response => { 
+              if(response.status == 200) {
+                response.json().then(response => {  
+                  console.log(response);
+                  resolve('OK');
+                });
+              }else{ throw "Respuesta " + response.status; }
+            })
+            .catch(error => { throw error; });
+          }).catch(error => { throw error })
+        }).catch(error => { reject("Error al registrar usuario: " + error); })
+    }).catch(error => { reject(error); })
+  }) 
 }
 
 // Verificar si el usuario está registrado
