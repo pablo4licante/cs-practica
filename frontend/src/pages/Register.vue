@@ -5,7 +5,7 @@
 <template>
     <body> 
         <div class="form-container">
-            <h2>Iniciar sesión</h2> 
+            <h2>Registro</h2> 
             <form @submit.prevent="submit">
                 <label id="respuesta" class="error"></label>
                 <label for="email">Email:</label>
@@ -13,9 +13,11 @@
 
                 <label for="password">Password:</label>
                 <input type="password" v-model="password" required>
-  
-                <a href="/register">¿No tienes cuenta? Regístrate.</a>
 
+                <label for="confirm_password">Confirm Password:</label>
+                <input type="password" v-model="password2" required>
+                
+                <a href="/login">¿Ya tienes cuenta? Inicia sesión.</a>
                 <button type="submit">Enviar</button>
             </form>
         </div>
@@ -25,7 +27,7 @@
 <script>
 export default {
     
-    name: 'LoginPage',
+    name: 'RegisterPage',
 
     data() {
         return {
@@ -36,18 +38,20 @@ export default {
     },
     methods: {
         async submit() { 
-            if(!this.email || !this.password)
+            if(!this.email || !this.password || !this.password2)
                 return;
-            
-            alert('@TODO: No está implementado!')
 
-            /*
-            await login(this.email, this.password).then((resp) => {
-                window.location.replace("/upload");
-            }).catch((err) => {
-                document.getElementById('respuesta').textContent = err;
-            });
-            */  
+            // Comprobar si contraseñas coinciden
+            if(this.password == this.password2)
+            { 
+                await registro(this.email, this.password).then((resp) => {
+                    window.location.replace("/login");
+                }).catch((err) => {
+                    document.getElementById('respuesta').textContent = err;
+                }); 
+            }else{
+                alert('Las contraseñas no coinciden');
+            }
         }
     }
 }
