@@ -273,6 +273,6 @@ export {
   registro,
   inicio,
   checkUsuarioRegistrado,
-  obtenerClavePublica,
+  obtenerClavePublica, 
   subirArchivo
 };
