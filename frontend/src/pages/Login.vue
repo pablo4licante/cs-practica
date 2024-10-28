@@ -38,16 +38,12 @@ export default {
         async submit() { 
             if(!this.email || !this.password)
                 return;
-            
-            alert('@TODO: No está implementado!')
 
-            /*
             await login(this.email, this.password).then((resp) => {
                 window.location.replace("/upload");
             }).catch((err) => {
                 document.getElementById('respuesta').textContent = err;
-            });
-            */  
+            });  
         }
     }
 }
