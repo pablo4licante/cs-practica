@@ -86,7 +86,7 @@ app.post("/obtener-salt", async (req, res) => {
       .then((resp) => {
         if (resp.exists == false)
           return res.status(400).json({ error: "User not found" });
-        else res.json(resp);
+        else res.json({ salt: resp.SALT });
       })
       .catch((error) => {
         throw error;

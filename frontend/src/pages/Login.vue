@@ -44,11 +44,7 @@ export default {
                 return;
                 
             await inicio(this.email, this.password, this.tfatoken).then((resp) => {
-                const data = resp.json();
-                alert(data.message);
-                if (data.success) {
-                    window.location.replace("/upload");
-                }
+                window.location.replace("/upload");
             }).catch((err) => {
                 document.getElementById('respuesta').textContent = err;
             }); 
