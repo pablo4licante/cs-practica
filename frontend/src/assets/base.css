@@ -103,11 +103,11 @@ h2 {
     border-radius: 4px;
 }
 .form-container button[type="submit"] {
-    background-color: #4CAF50;
+    background-color: #003366;
     color: white;
     border: none;
     cursor: pointer;
 }
 .form-container button[type="submit"]:hover {
-    background-color: #45a049;
+    background-color: #004080;
 } 

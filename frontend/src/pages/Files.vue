@@ -1,7 +1,7 @@
 <script>
 
 export default {
-    name: 'UploadPage',
+    name: 'FilesPage',
     data() {
         return {
             archivos: [],
@@ -30,7 +30,7 @@ export default {
                 });
             } catch (error) {
                 console.error('Failed to fetch archivos:', error);
-                this.error = 'Failed to load files.';
+                this.error = 'Error al cargar los archivos.';
             }
         },
         formatSize(fileSize) {
