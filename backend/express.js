@@ -4,17 +4,17 @@ const { guardarClavesRSA } = require('./backend.modules.js');
 const { guardarUsuario } = require('./backend.modules.js');
 const { getUser } = require('./backend.modules.js');
 const { obtenerClavePublica, obtenerArchivosUsuario, 
-        subirArchivo, generarToken, validarToken } = require('./backend.modules.js');
+        subirArchivo, generarToken, validarToken, obtenerSalt, obtenerPassword } = require('./backend.modules.js');
 
 const app = express();
 const port = 3000;
 
+app.use(express.json())
 app.use(cors());
 app.use(express.json());
 
 app.get('/token', (req, res) => {  
     let newToken = generarToken({
-        userID: 1,
         user: 'pablo', 
         email: 'pablo@example.com',
     });
@@ -36,7 +36,7 @@ app.get('/obtener-archivos', async (req, res) => {
 });
 
 
-app.post('/guardar-datos', express.json(), async (req, res) => {
+app.post('/registrar-usuario', express.json(), async (req, res) => {
     const { email, public_key, private_key, password, salt } = req.body;
 
     if (!email || !public_key || !private_key || !password || !salt) {
@@ -49,6 +49,55 @@ app.post('/guardar-datos', express.json(), async (req, res) => {
         res.json({ message: 'Data saved successfully', claveResult, usuarioResult });
     } catch (error) {
         res.status(500).json({ error: 'Failed to save data' });
+    }
+});
+
+app.post('/obtener-salt', async (req, res) => {
+    const { email } = req.body;
+ 
+    if (!email) {
+        res.status(400).json({ error: 'Email is required' });
+    }
+
+    try {
+        const user = await getUser(email);
+        if(user.exists == false)
+            return res.status(400).json({ error: 'User not found' });
+        
+        obtenerSalt(email).then(resp => {
+            res.json(resp);
+        }).catch(error => { throw error; }); 
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch salt' });
+    }
+});
+
+app.post('/iniciar-usuario', async (req, res) => {
+    const { email, password } = req.body;
+ 
+    if (!email || !password) {
+        res.status(400).json({ error: 'Email and Password is required' });
+    }
+
+    try {
+        const user = await getUser(email);
+        if(user.exists == false)
+            return res.status(400).json({ error: 'Invalid login' });
+        
+        obtenerPassword(email).then(resp => {
+            console.log('login comparando ' + resp + ' ' + password); 
+            if(resp == password) {
+                let newToken = generarToken({
+                    userID: user.id, 
+                    email: email,
+                });
+                res.json({message: 'OK', token: newToken});
+            }else{
+                res.status(400).json({ error: 'Invalid login' });
+            }
+        }).catch(error => { throw error; }); 
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to login user' + error });
     }
 });
 

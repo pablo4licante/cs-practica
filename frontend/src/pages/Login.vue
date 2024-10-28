@@ -1,5 +1,5 @@
 <script setup> 
-    import { registro } from '../frontend.modules.js'; 
+    import { inicio } from '../frontend.modules.js'; 
 </script>
  
 <template>
@@ -38,17 +38,16 @@ export default {
         async submit() { 
             if(!this.email || !this.password)
                 return;
-
-            await login(this.email, this.password).then((resp) => {
+                
+            await inicio(this.email, this.password).then((resp) => {
                 window.location.replace("/upload");
             }).catch((err) => {
                 document.getElementById('respuesta').textContent = err;
-            });  
+            }); 
         }
     }
 }
 </script>
-
 <style>
 .upload-page {
     text-align: center;
@@ -73,5 +72,4 @@ html::before{
     z-index: -1;
     opacity: .6;
 }
-
 </style>

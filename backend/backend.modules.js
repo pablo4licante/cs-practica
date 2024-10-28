@@ -239,6 +239,26 @@ async function obtenerArchivosUsuario(token) {
     });
 }
 
+async function obtenerSalt(email) {
+    try { 
+        const res = await db.sql`SELECT SALT FROM USERS WHERE EMAIL = ${email};`;
+        return { status: 200, salt: res[0].SALT };
+    } catch (error) {
+        console.error('Error en obtenerSalt:', error);
+        throw error;
+    }
+}
+
+async function obtenerPassword(email) {
+    try { 
+        const res = await db.sql`SELECT PASSWORD FROM USERS WHERE EMAIL = ${email};`;
+        return res[0].PASSWORD;
+    } catch (error) {
+        console.error('Error en obtenerPassword:', error);
+        throw error;
+    }
+}
+
 async function obtenerClavePublica(token) {
     try {
         // Decodificar el token jwt
@@ -317,7 +337,14 @@ async function guardarUsuario(email, password, salt) {
 async function getUser(email) {
     try {
         const res = await db.sql`SELECT COUNT(*) as count FROM USERS WHERE EMAIL = ${email};`;
-        return { exists: res[0].count > 0 };
+
+        if(res[0].count > 0) {
+            const res = await db.sql`SELECT * FROM USERS WHERE EMAIL = ${email};`;
+            return { id: res[0].ID, exists: true };
+        } else {
+            return { exists: false};
+        } 
+        
     } catch (error) {
         console.error('Error en getUser:', error);
         throw error;
@@ -325,6 +352,8 @@ async function getUser(email) {
 }
 
 module.exports = {
+    obtenerSalt,
+    obtenerPassword,
     obtenerClavePublica,
     obtenerArchivosUsuario,
     guardarClavesRSA,
