@@ -13,16 +13,14 @@
 
                 <label for="password">Contraseña:</label>
                 <input type="password" v-model="password" required>
+
+                <label for="token">Código 2FA:</label>
+                <input type="text" v-model="tfatoken" required>
   
                 <p>¿No tienes cuenta? <a href="/register">Regístrate.</a></p>
 
                 <button type="submit">Enviar</button>
             </form>
-
-            <div v-if="qrCode">
-            <img :src="qrCode" alt="QR Code" />
-                <p>Escanea este código con Google Authenticator.</p>
-            </div>
         </div>
     </body> 
 </template> 
@@ -37,15 +35,20 @@ export default {
         return {
             email: '',
             password: '',
+            tfatoken: ''
         }
     },
     methods: {
-        submit() { 
+        async submit() { 
             if(!this.email || !this.password)
                 return;
                 
-            await inicio(this.email, this.password).then((resp) => {
-                window.location.replace("/upload");
+            await inicio(this.email, this.password, this.tfatoken).then((resp) => {
+                const data = resp.json();
+                alert(data.message);
+                if (data.success) {
+                    window.location.replace("/upload");
+                }
             }).catch((err) => {
                 document.getElementById('respuesta').textContent = err;
             }); 
