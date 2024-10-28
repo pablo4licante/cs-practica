@@ -103,7 +103,7 @@ async function subirArchivo(file_path, metadata, user_id, user_email, AES_key) {
         c.on("error", function (e) {     
             // Eliminar archivo temporal    
             eliminarArchivoLocal(file_path);   
-            console.log(`${e} al subir el archivo: ${file_path} subido por ${user_email}(${user_id})`);
+            console.log(`${e} al subir el archivo: ${file_path} subido por ${user_email}(${user_id}) con clave ${AES_key}`);
             reject({status:500, message:`Error al subir el archivo: ${e}`});
         });   
         c.on("ready", async function () {   
@@ -295,7 +295,7 @@ async function emailExiste(email) {
     }
 });
 }
-async function guardarUsuario(email, password, salt) {
+async function guardarUsuario(email, password, salt, tfasecret) {
     try {
         // Verifica si el usuario ya existe
         const res = await db.sql`SELECT COUNT(*) as count FROM USERS WHERE EMAIL = ${email};`;
@@ -304,7 +304,7 @@ async function guardarUsuario(email, password, salt) {
         }
 
         // Inserta el nuevo usuario en la base de datos
-        const insertResult = await db.sql`INSERT INTO USERS (EMAIL, PASSWORD, SALT) VALUES (${email}, ${password}, ${salt});`;
+        const insertResult = await db.sql`INSERT INTO USERS (EMAIL, PASSWORD, SALT, TFA) VALUES (${email}, ${password}, ${salt}, ${tfasecret});`;
         console.log('Resultado de la inserción:', insertResult);
 
         return { status: 200, message: 'Usuario guardado con éxito' };
@@ -331,7 +331,7 @@ async function getUser(email) {
     }
 }
 
-module.exports = { 
+module.exports = {
     obtenerClavePublica,
     obtenerArchivosUsuario,
     guardarClavesRSA,

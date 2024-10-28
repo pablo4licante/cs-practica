@@ -13,6 +13,9 @@
 
                 <label for="password">Contraseña:</label>
                 <input type="password" v-model="password" required>
+
+                <label for="token">Código 2FA:</label>
+                <input type="text" v-model="tfatoken" required>
   
                 <p>¿No tienes cuenta? <a href="/register">Regístrate.</a></p>
 
@@ -23,15 +26,16 @@
 </template> 
 
 <script>
+
 export default {
-    
+
     name: 'LoginPage',
 
     data() {
         return {
             email: '',
             password: '',
-            password2: '', 
+            tfatoken: ''
         }
     },
     methods: {
@@ -39,7 +43,7 @@ export default {
             if(!this.email || !this.password)
                 return;
                 
-            await inicio(this.email, this.password).then((resp) => {
+            await inicio(this.email, this.password, this.tfatoken).then((resp) => {
                 window.location.replace("/upload");
             }).catch((err) => {
                 document.getElementById('respuesta').textContent = err;

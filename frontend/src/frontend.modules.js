@@ -101,7 +101,7 @@ async function cifrarClaveAES(claveAES, RSA_public_key) {
 }
 
 // Pipeline de iniciar sesion
-async function inicio(email, password) {
+async function inicio(email, password, tfatoken) {
   console.log("Iniciando usuario..."); 
   return new Promise((resolve, reject) =>  { 
     fetch(api + '/obtener-salt', {
@@ -129,7 +129,8 @@ async function inicio(email, password) {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 email,
-                password: hashMitad2
+                password: hashMitad2,
+                tfatoken,
               })
             })
             .then(response => { 
@@ -148,7 +149,6 @@ async function inicio(email, password) {
     }).catch(error => { reject(error); })
   }) 
 }
-
 // Pipeline de registro
 async function registro(email, password) {
   console.log("Registrando usuario..."); 
@@ -184,7 +184,7 @@ async function registro(email, password) {
               if(response.status == 200) {
                 response.json().then(response => {  
                   console.log(response);
-                  resolve('OK');
+                  resolve(response);
                 });
               }else{ throw "Respuesta " + response.status; }
             })
@@ -267,12 +267,12 @@ async function subirArchivo(formData, archivoPlano) {
 export { 
   generarClaveAES,
   cifrarRSAPrivada,
-  generar_Clave_AES_Random,
+  generar_Clave_AES_Random, 
   cifrarArchivo,
   guardarDatos,
   registro,
   inicio,
   checkUsuarioRegistrado,
-  obtenerClavePublica, 
+  obtenerClavePublica,
   subirArchivo
 };
