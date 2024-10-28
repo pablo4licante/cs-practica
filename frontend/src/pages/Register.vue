@@ -6,7 +6,12 @@
     <body> 
         <div class="form-container">
             <h2>Registro</h2> 
-            <form @submit.prevent="submit">
+            <div v-if="qrCode">
+                <img :src="qrCode" alt="QR Code" />
+                <p>Escanea este código con Google Authenticator.</p>
+                <button @click="aceptarQR">He escaneado el QR</button>
+            </div>
+            <form v-else @submit.prevent="submit">
                 <label id="respuesta" class="error"></label>
                 <label for="email">Correo electrónico:</label>
                 <input type="email" v-model="email" required>
@@ -34,6 +39,7 @@ export default {
             email: '',
             password: '',
             password2: '', 
+            qrCode: '',
         }
     },
     methods: {
@@ -42,16 +48,18 @@ export default {
                 return;
 
             // Comprobar si contraseñas coinciden
-            if(this.password == this.password2)
-            { 
-                await registro(this.email, this.password).then((resp) => {
-                    window.location.replace("/login");
+            if(this.password == this.password2) { 
+                await registro(this.email, this.password).then((resp) => {  
+                    this.qrCode = resp.qrCode;  
                 }).catch((err) => {
                     document.getElementById('respuesta').textContent = err;
                 }); 
             }else{
                 alert('Las contraseñas no coinciden');
             }
+        },
+        async aceptarQR() {
+            window.location.replace("/login");
         }
     }
 }
