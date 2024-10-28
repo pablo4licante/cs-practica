@@ -8,13 +8,15 @@ import { createRouter, createWebHistory } from 'vue-router'
 import RegisterPage from './pages/Register.vue'
 import LoginPage from './pages/Login.vue'
 import UploadPage from './pages/Upload.vue'
+import FilesPage from './pages/Files.vue'
 import cors from 'cors'
 
 const routes = [
     { path: '/', component: RegisterPage },
     { path: '/register', component: RegisterPage },
     { path: '/login', component: LoginPage },
-    { path: '/upload', component: UploadPage }
+    { path: '/upload', component: UploadPage },
+    { path: '/files', component: FilesPage }
 ]
 
 const router = createRouter({

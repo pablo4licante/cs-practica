@@ -2,3 +2,4 @@ backend/node_modules/
 backend/tmp/
 frontend/node_modules/
 .vscode/
+node_modules

@@ -19,7 +19,7 @@ const generarToken = (payload) => {
         expiresIn: '1h',  
     }; 
     return jwt.sign(payload, jwt_secret, opciones);
-};  
+};
 
 const validarToken = (req, res, next) => { 
     jwt.verify(req.headers.authorization, jwt_secret, (err, payload) => {
