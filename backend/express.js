@@ -6,6 +6,9 @@ const { getUser } = require('./backend.modules.js');
 const { obtenerClavePublica, obtenerArchivosUsuario, 
         subirArchivo, generarToken, validarToken, obtenerSalt, obtenerPassword } = require('./backend.modules.js');
 
+const speakeasy = require('speakeasy');
+const qrcode = require("qrcode");
+
 const app = express();
 const port = 3000;
 
@@ -43,10 +46,14 @@ app.post('/registrar-usuario', express.json(), async (req, res) => {
         return res.status(400).json({ error: 'Email, public_key, private_key, password, and salt are required' });
     }
 
+    const tfasecret = speakeasy.generateSecret({ name: `Cloudy (${email})` });
+
     try {
-        const usuarioResult = await guardarUsuario(email, password, salt);
+        const usuarioResult = await guardarUsuario(email, password, salt, tfasecret.base32);
         const claveResult = await guardarClavesRSA(email, public_key, private_key);
-        res.json({ message: 'Data saved successfully', claveResult, usuarioResult });
+        qrcode.toDataURL(secret.otpauth_url, (err, data_url) => {
+            res.json({ qrCode: data_url, message: "Usuario registrado", secret: secret.base32 });
+        });
     } catch (error) {
         res.status(500).json({ error: 'Failed to save data' });
     }

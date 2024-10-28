@@ -184,7 +184,7 @@ async function registro(email, password) {
               if(response.status == 200) {
                 response.json().then(response => {  
                   console.log(response);
-                  resolve('OK');
+                  resolve(response);
                 });
               }else{ throw "Respuesta " + response.status; }
             })
@@ -267,7 +267,7 @@ async function subirArchivo(formData, archivoPlano) {
 export { 
   generarClaveAES,
   cifrarRSAPrivada,
-  generar_Clave_AES_Random,
+  generar_Clave_AES_Random, 
   cifrarArchivo,
   guardarDatos,
   registro,

@@ -18,24 +18,29 @@
 
                 <button type="submit">Enviar</button>
             </form>
+
+            <div v-if="qrCode">
+            <img :src="qrCode" alt="QR Code" />
+                <p>Escanea este código con Google Authenticator.</p>
+            </div>
         </div>
     </body> 
 </template> 
 
 <script>
+
 export default {
-    
+
     name: 'LoginPage',
 
     data() {
         return {
             email: '',
             password: '',
-            password2: '', 
         }
     },
     methods: {
-        async submit() { 
+        submit() { 
             if(!this.email || !this.password)
                 return;
                 
