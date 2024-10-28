@@ -103,7 +103,7 @@ async function subirArchivo(file_path, metadata, user_id, user_email, AES_key) {
         c.on("error", function (e) {     
             // Eliminar archivo temporal    
             eliminarArchivoLocal(file_path);   
-            console.log(`${e} al subir el archivo: ${file_path} subido por ${user_email}(${user_id}) con clave ${AES_key}`);
+            console.log(`${e} al subir el archivo: ${file_path} subido por ${user_email}(${user_id})`);
             reject({status:500, message:`Error al subir el archivo: ${e}`});
         });   
         c.on("ready", async function () {   
@@ -149,7 +149,7 @@ async function subirArchivo(file_path, metadata, user_id, user_email, AES_key) {
                     await c.put(file_path, destino, async function (err) { 
                         if (err) throw err;
 
-                        console.log(`Archivo ${file_path} subido por ${user_email}(${user_id}) con clave ${AES_key}`);
+                        console.log(`Archivo ${file_path} subido por ${user_email}(${user_id})`);
                        
                         // Eliminar archivo temporal    
                         eliminarArchivoLocal(file_path); 
@@ -164,7 +164,7 @@ async function subirArchivo(file_path, metadata, user_id, user_email, AES_key) {
                 // Eliminar archivo temporal    
                 eliminarArchivoLocal(file_path); 
 
-                console.log(`${e} al subir el archivo: ${file_path} subido por ${user_email}(${user_id}) con clave ${AES_key}`);
+                console.log(`${e} al subir el archivo: ${file_path} subido por ${user_email}(${user_id})`);
                 reject({status:500, message:`Error al subir el archivo: ${e}`});
             }
         });  

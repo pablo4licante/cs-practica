@@ -3,13 +3,9 @@ const cors = require("cors");
 const { guardarClavesRSA } = require("./backend.modules.js");
 const { guardarUsuario } = require("./backend.modules.js");
 const { getUser } = require("./backend.modules.js");
-const {
-  obtenerClavePublica,
-  obtenerArchivosUsuario,
-  subirArchivo,
-  generarToken,
-  validarToken,
-} = require("./backend.modules.js");
+const { obtenerClavePublica, obtenerArchivosUsuario,
+        subirArchivo, generarToken, validarToken,
+      } = require("./backend.modules.js");
 
 const speakeasy = require("speakeasy");
 const qrcode = require("qrcode");
@@ -19,7 +15,6 @@ const port = 3000;
 
 app.use(express.json());
 app.use(cors());
-app.use(express.json());
 
 app.get("/token", (req, res) => {
   let newToken = generarToken({
@@ -31,10 +26,9 @@ app.get("/token", (req, res) => {
 
 app.get("/obtener-archivos", async (req, res) => {
   const token = req.query.token;
-  if (!token) {
+  if (!token) 
     return res.status(400).json({ error: "Token is required" });
-  }
-
+   
   try {
     const archivos = await obtenerArchivosUsuario(token);
     res.json(archivos);
@@ -55,13 +49,8 @@ app.post("/registrar-usuario", express.json(), async (req, res) => {
   const tfasecret = speakeasy.generateSecret({ name: `Cloudy (${email})` });
 
   try {
-    const usuarioResult = await guardarUsuario(
-      email,
-      password,
-      salt,
-      tfasecret.base32
-    );
-    const claveResult = await guardarClavesRSA(email, public_key, private_key);
+    await guardarUsuario(email, password,salt, tfasecret.base32);
+    await guardarClavesRSA(email, public_key, private_key);
     qrcode.toDataURL(tfasecret.otpauth_url, (err, data_url) => {
       res.json({
         qrCode: data_url,
@@ -82,11 +71,11 @@ app.post("/obtener-salt", async (req, res) => {
   }
 
   try {
-    getUser(email)
-      .then((resp) => {
+    getUser(email).then((resp) => {
         if (resp.exists == false)
           return res.status(400).json({ error: "User not found" });
-        else res.json({ salt: resp.SALT });
+
+        res.json({ salt: resp.SALT });
       })
       .catch((error) => {
         throw error;
@@ -160,31 +149,29 @@ app.get("/obtener-clave-publica", async (req, res) => {
 
 const multer = require("multer");
 const upload = multer({ dest: "./tmp/" });
-app.post(
-  "/subir-archivo",
-  validarToken,
-  upload.single("upload"),
+app.post("/subir-archivo", validarToken, upload.single("upload"),
   async (req, res) => {
     if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
+        return res.status(400).json({ error: "No file uploaded" });
     }
 
-    let metadata = {
-      filename: req.file.originalname,
-      size: req.file.size,
-      mimetype: req.file.mimetype,
-      date: new Date(),
-    };
+    try {
+      let metadata = {
+        filename: req.file.originalname,
+        size: req.file.size,
+        mimetype: req.file.mimetype,
+        date: new Date(),
+      };
 
-    console.log("received file with " + JSON.stringify(metadata));
+      console.log("received file with " + JSON.stringify(metadata));
 
-    await subirArchivo(
-      `./${req.file.path}`,
-      metadata,
-      req.userID,
-      req.email,
-      req.body.claveAES
-    )
+      await subirArchivo(
+        `./${req.file.path}`,
+        metadata,
+        req.userID,
+        req.email,
+        req.body.claveAES
+      )
       .then((resp) => {
         console.log("status: " + resp.status);
         res.status(resp.status).json(resp);
@@ -193,6 +180,9 @@ app.post(
         console.log("er status: " + JSON.stringify(err));
         res.status(500).json(err);
       });
+    }catch (error) {
+        res.status(500).json({ error: 'Failed to upload file' });
+    }
   }
 );
 

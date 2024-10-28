@@ -48,13 +48,9 @@ export default {
                 return;
 
             // Comprobar si contraseñas coinciden
-            if(this.password == this.password2)
-            { 
-                await registro(this.email, this.password).then((resp) => {
-                    
-                    const data = resp;
-                    this.qrCode = data.qrCode; 
-                    
+            if(this.password == this.password2) { 
+                await registro(this.email, this.password).then((resp) => {  
+                    this.qrCode = resp.qrCode;  
                 }).catch((err) => {
                     document.getElementById('respuesta').textContent = err;
                 }); 
