@@ -2,8 +2,6 @@ import aesjs from 'aes-js';
 
 const api = 'http://localhost:3000';
 
-const mytoken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySUQiOjEsInVzZXIiOiJwYWJsbyIsImVtYWlsIjoicGFibG9AZXhhbXBsZS5jb20iLCJpYXQiOjE3Mjk5MDc5NzcsImV4cCI6MTcyOTkxMTU3N30.iacG8apqNDPJdScRLnh8vU17oT7E3FHi2YInS0n6vgs";
-
 // Modulo 1: Generar claves RSA
 // Generar claves RSA de manera aleatoria usando Web Crypto API
 async function generarClavesRSA(contrasenya) {
@@ -102,6 +100,55 @@ async function cifrarClaveAES(claveAES, RSA_public_key) {
   return aesjs.utils.hex.fromBytes(aesCtr.encrypt(claveRSA_Bytes));
 }
 
+// Pipeline de iniciar sesion
+async function inicio(email, password) {
+  console.log("Iniciando usuario..."); 
+  return new Promise((resolve, reject) =>  { 
+    fetch(api + '/obtener-salt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email })
+    })
+    .then(response => { 
+      if(response.status == 200) {
+        response.json().then(response => {  
+          const salt = response.salt; 
+  
+          const passwordConSalt = password + salt;
+          const passwordBytes = new TextEncoder().encode(passwordConSalt);
+          console.log('salt ' + response.salt);
+
+          crypto.subtle.digest('SHA-256', passwordBytes).then(hash => { 
+            const hashHex = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+            const hashMitad2 = hashHex.slice(hashHex.length / 2);
+ 
+            console.log('hashmitad ' + hashMitad2);
+
+            fetch(api + '/iniciar-usuario', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email,
+                password: hashMitad2
+              })
+            })
+            .then(response => { 
+              if(response.status == 200) {
+                response.json().then(response => {  
+                  console.log('Token recibido: '+response.token);
+                  sessionStorage.setItem("token", response.token);
+                  resolve('OK');
+                });
+              }else{ throw "Respuesta " + response.status; }
+            })
+            .catch(error => { throw error; });
+          }).catch(error => { reject("Error al iniciar usuario: " + error); })
+        });
+      }else{ throw "Respuesta " + response.status; }
+    }).catch(error => { reject(error); })
+  }) 
+}
+
 // Pipeline de registro
 async function registro(email, password) {
   console.log("Registrando usuario..."); 
@@ -122,7 +169,7 @@ async function registro(email, password) {
           generarClavesRSA(password).then(RSA_keys => {  
             const privateKeyEncrypted = cifrarRSAPrivada(RSA_keys.privada, aesjs.utils.utf8.toBytes(hashMitad1));
       
-            fetch(api + '/guardar-datos', {
+            fetch(api + '/registrar-usuario', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -184,7 +231,13 @@ async function obtenerClavePublica(token) {
 
 async function subirArchivo(formData, archivoPlano) {
   const archivoSubido = formData.get("upload");
- 
+  const mytoken = sessionStorage.getItem("token");
+
+  // Sin token no funciona
+  if(mytoken == null) {
+    window.location.replace("/login");
+  }
+
   let clave_AES = await generar_Clave_AES_Random();
   let RSA_public_key = await obtenerClavePublica(mytoken); 
   let archivoCifrado = await cifrarArchivo(archivoPlano, clave_AES);
@@ -218,6 +271,7 @@ export {
   cifrarArchivo,
   guardarDatos,
   registro,
+  inicio,
   checkUsuarioRegistrado,
   obtenerClavePublica,
   subirArchivo
