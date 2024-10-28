@@ -143,7 +143,7 @@ async function inicio(email, password) {
             })
             .catch(error => { throw error; });
           }).catch(error => { reject("Error al iniciar usuario: " + error); })
-        });
+        }).catch(error => { throw error; });
       }else{ throw "Respuesta " + response.status; }
     }).catch(error => { reject(error); })
   }) 
