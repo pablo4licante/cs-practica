@@ -158,11 +158,10 @@ app.post("/subir-archivo", validarToken, upload.single("upload"),
     try {
       let metadata = {
         filename: req.file.originalname,
-        size: req.file.size,
+        size: parseInt(req.body.originalSize, 10),
         mimetype: req.file.mimetype,
         date: new Date(),
       };
-
       console.log("received file with " + JSON.stringify(metadata));
 
       await subirArchivo(

@@ -244,15 +244,16 @@ async function subirArchivo(formData, archivoPlano) {
   let clave_AES_cifrada = await cifrarClaveAES(clave_AES, RSA_public_key);
  
   console.log("creando archivo cifrado");
-  let archivo = new Blob([new Uint8Array(archivoCifrado)], { 
-    type: archivoSubido.type, 
-    name: archivoSubido.name, 
+  let archivo = new File([new Uint8Array(archivoCifrado)], archivoSubido.name, {
+    type: archivoSubido.type,
     lastModified: archivoSubido.lastModified
   });
 
-  formData.set("upload", archivo);
+  formData.set("upload", archivo); 
   formData.set("claveAES", clave_AES_cifrada);
-  
+  formData.set("originalSize", archivoSubido.size.toString())
+  console.log("archivo subido size: " + archivoSubido.size.toString());
+
   console.log("subiendo...");
   await fetch(api + '/subir-archivo', {
     method: 'POST',
