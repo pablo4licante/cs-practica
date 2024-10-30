@@ -8,14 +8,13 @@
             <h1>Pagina de Subida</h1>
             <br>
             <form method="post" enctype="multipart/form-data">
-                <input type="file" name="upload" class="selector-archivo"/> 
+                <input type="file" name="upload"/> 
                 <br>
-                <button @click="onSubmit">Subir archivo</button>
+                <button type="button" @click="onSubmit">Subir archivo</button>
             </form>
         </div>
 
-        <button href="./Files.vue">Mis Archivos</button>
-
+        <button type="button" @click="redirectFiles">Ver mis archivos</button>
     </div>
 </template>
 
@@ -46,6 +45,9 @@ export default {
             } else {
                 console.log('No file selected');
             }
+        },
+        redirectFiles(){
+            window.location.replace("/files");
         }
     }
 };
@@ -79,7 +81,4 @@ button:hover {
     background-color: var(--blue-button-hover);
 }
 
-.selector-archivo {
-    margin-bottom: 2rem;
-}
 </style>

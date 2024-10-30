@@ -38,6 +38,9 @@ export default {
             if (fileSize < 1024 * 1024 * 1024) return `${(fileSize / (1024 * 1024)).toFixed(2)} MB`;
             return `${(fileSize / (1024 * 1024 * 1024)).toFixed(2)} GB`;
         },
+        redirectUpload(){
+            window.location.replace("/upload");
+        }
     },
 };
 </script>
@@ -45,18 +48,16 @@ export default {
 <template>
     <div class="info-container">
         <h1>Mis archivos</h1>
-        <div id="file-explorer">
-            <div v-if="error">{{ error }}</div>
-            <div v-else>
-                <div v-for="archivo in archivos" :key="archivo.url" class="file-card">
-                    <h3>{{ archivo.filename }}</h3>
-                    <p>{{ archivo.date }}</p>
-                    <p>URL: {{ archivo.url }}</p>
-                    <p>Size: {{ archivo.size }}</p>
-                </div>
+        <div v-if="error">{{ error }}</div>
+        <div v-else id="file-explorer">
+            <div v-for="archivo in archivos" :key="archivo.url" class="file-card">
+                <h3>{{ archivo.filename }}</h3>
+                <p>{{ archivo.date }}</p>
+                <p>URL: {{ archivo.url }}</p>
+                <p>Size: {{ archivo.size }}</p>
             </div>
         </div>
-        <button href="./Upload.vue">Subir archivo</button>
+        <button type="button" @click="redirectUpload">Subir archivo</button>
     </div>
 </template>
 
@@ -89,6 +90,7 @@ h1 {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     padding: 20px;
     transition: transform 0.2s;
+    margin: 10px;
 }
 
 .file-card:hover {
