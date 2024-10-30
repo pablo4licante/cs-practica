@@ -52,6 +52,7 @@ export default {
     }
 }
 </script>
+
 <style>
 .upload-page {
     text-align: center;
@@ -63,17 +64,4 @@ p {
     margin: 1rem;
 }
 
-html::before{
-    background: url("../assets/fondocloudy.png");
-    object-fit: cover;
-    background-size: 110%;
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
-    opacity: .6;
-}
 </style>

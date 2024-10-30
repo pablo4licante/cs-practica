@@ -3,13 +3,19 @@
 </script>
 
 <template>
-    <div class="upload-page">
-        <h1>Pagina de Subida</h1>
-        <br>
-        <form method="post" enctype="multipart/form-data">
-            <input type="file" name="upload" /> 
-            <button type="button" @click="onSubmit">Subir archivo</button>
-        </form>
+    <div class="info-container">
+        <div class="upload-page">
+            <h1>Pagina de Subida</h1>
+            <br>
+            <form method="post" enctype="multipart/form-data">
+                <input type="file" name="upload" class="selector-archivo"/> 
+                <br>
+                <button @click="onSubmit">Subir archivo</button>
+            </form>
+        </div>
+
+        <button href="./Files.vue">Mis Archivos</button>
+
     </div>
 </template>
 
@@ -49,5 +55,31 @@ export default {
 .upload-page {
     text-align: center;
     margin-top: 50px;
+}
+
+h1 {
+    margin: 0;
+    margin-top: -1rem;
+    margin-bottom: 1rem;
+}
+
+button { 
+    width: 40%;
+    padding: 10px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: var(--blue-button);
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover { 
+    background-color: var(--blue-button-hover);
+}
+
+.selector-archivo {
+    margin-bottom: 2rem;
 }
 </style>

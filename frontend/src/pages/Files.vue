@@ -43,17 +43,20 @@ export default {
 </script>
 
 <template>
-    <h1>Mis archivos</h1>
-    <div id="file-explorer">
-        <div v-if="error">{{ error }}</div>
-        <div v-else>
-            <div v-for="archivo in archivos" :key="archivo.url" class="file-card">
-                <h3>{{ archivo.filename }}</h3>
-                <p>{{ archivo.date }}</p>
-                <p>URL: {{ archivo.url }}</p>
-                <p>Size: {{ archivo.size }}</p>
+    <div class="info-container">
+        <h1>Mis archivos</h1>
+        <div id="file-explorer">
+            <div v-if="error">{{ error }}</div>
+            <div v-else>
+                <div v-for="archivo in archivos" :key="archivo.url" class="file-card">
+                    <h3>{{ archivo.filename }}</h3>
+                    <p>{{ archivo.date }}</p>
+                    <p>URL: {{ archivo.url }}</p>
+                    <p>Size: {{ archivo.size }}</p>
+                </div>
             </div>
         </div>
+        <button href="./Upload.vue">Subir archivo</button>
     </div>
 </template>
 
@@ -68,6 +71,7 @@ body {
 h1 {
     text-align: center;
     margin-top: 20px;
+    margin-bottom: 40px;
 }
 
 #file-explorer {
@@ -99,5 +103,21 @@ h1 {
 .file-card p {
     color: #666;
     margin: 5px 0;
+}
+
+button { 
+    width: 40%;
+    padding: 10px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: var(--blue-button);
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover { 
+    background-color: var(--blue-button-hover);
 }
 </style>

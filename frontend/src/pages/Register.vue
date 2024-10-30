@@ -5,8 +5,8 @@
 <template>
     <body> 
         <div class="form-container">
-            <h2>Registro</h2> 
-            <div v-if="qrCode">
+        <h2>Registro</h2> 
+            <div v-if="qrCode" class="codigo-qr">
                 <img :src="qrCode" alt="QR Code" />
                 <p>Escanea este código con Google Authenticator.</p>
                 <button @click="aceptarQR">He escaneado el QR</button>
@@ -26,7 +26,7 @@
                 <button type="submit">Enviar</button>
             </form>
         </div>
-    </body> 
+    </body>
 </template> 
 
 <script>
@@ -71,23 +71,32 @@ export default {
     margin-top: 50px;
 }
 
+.codigo-qr {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
 p {
     text-align: center;
     margin: 1rem;
 }
 
-html::before{
-    background: url("../assets/fondocloudy.png");
-    object-fit: cover;
-    background-size: 110%;
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
-    opacity: .6;
+button { 
+    width: 80%;
+    padding: 10px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: var(--blue-button);
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover { 
+    background-color: var(--blue-button-hover);
 }
 
 </style>
