@@ -5,6 +5,6 @@ La aplicacion Cloudy se separa en dos carpetas:
 - **Frontend**. Implementado con VUE, para lanzarlo usar
 `npm run dev`
 - **Backend**. Implementado con Express, para lanzarlo usar
-`node express.js`
+`node express.js` (en caso de faltar dependencias usar `npm i` primero)
 
 WIP
